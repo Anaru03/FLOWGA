@@ -1,7 +1,15 @@
-# Flow Solver - Versión Modularizada
+# 🧬 Flow Puzzle Solver con Algoritmos Genéticos
 
-## Descripción
-Este proyecto utiliza Algoritmos Genéticos para resolver puzzles del juego Flow. La versión modularizada organiza el código en módulos especializados para facilitar el mantenimiento y comprensión.
+Este proyecto implementa un solucionador de puzzles Flow utilizando algoritmos genéticos, con un sistema completo de métricas, análisis de rendimiento y visualizaciones interactivas.
+
+## 🎯 Características
+
+- **Algoritmo Genético Avanzado**: Implementación completa con selección por torneo, cruce uniforme y mutación inteligente
+- **Sistema de Métricas Comprehensivo**: Tracking detallado de fitness, diversidad, convergencia y fases del algoritmo
+- **Visualizaciones Interactivas**: Gráficas de evolución del fitness, diversidad y análisis estadístico
+- **Generador de Puzzles**: Creación automática de puzzles Flow válidos con diferentes niveles de dificultad
+- **Análisis Comparativo**: Ejecución de múltiples experimentos con análisis estadístico
+- **Dashboard de Resultados**: Exportación automática de métricas y visualizaciones
 
 ## Estructura del Proyecto
 

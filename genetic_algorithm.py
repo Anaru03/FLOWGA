@@ -1,11 +1,18 @@
 # Algoritmo Genético para resolver Flow
+import statistics
 from collections import deque
 from random import choice, randint, random
 from typing import Dict, List, Optional, Tuple
 
 try:
+    from .metrics import (GAMetrics, GenerationMetrics,
+                          calculate_convergence_rate, calculate_diversity,
+                          count_perfect_solutions)
     from .utils import Color, Coord, bfs_connected, neighbors
 except ImportError:
+    from metrics import (GAMetrics, GenerationMetrics,
+                         calculate_convergence_rate, calculate_diversity,
+                         count_perfect_solutions)
     from utils import Color, Coord, bfs_connected, neighbors
 
 
@@ -171,23 +178,73 @@ def ga_solve_flow(N: int,
                   mut_rate: float = 0.03,
                   elite: int = 3,
                   tour_k: int = 3,
-                  verbose: bool = True) -> Optional[List[List[str]]]:
-    """Resuelve Flow usando Algoritmo Genético."""
+                  verbose: bool = True,
+                  collect_metrics: bool = False) -> tuple[Optional[List[List[str]]], Optional[GAMetrics]]:
+    """Resuelve Flow usando Algoritmo Genético con métricas opcionales."""
+    
+    # Inicializar métricas si se solicita
+    metrics = None
+    if collect_metrics:
+        metrics = GAMetrics(
+            pop_size=pop_size,
+            generations=generations,
+            mut_rate=mut_rate,
+            elite_size=elite,
+            tournament_k=tour_k,
+            board_size=N,
+            num_colors=len(terminals)
+        )
+        metrics.start_timing()
+    
     fixed = build_fixed_mask(N, terminals)
     pop = [random_individual(N, terminals) for _ in range(pop_size)]
 
     best, best_fit = None, -1e18
+    fitness_history = []
+    
     for gen in range(1, generations+1):
         fits = [fitness(ind, terminals) for ind in pop]
         i_best = max(range(pop_size), key=lambda i: fits[i])
+        
         if fits[i_best] > best_fit:
-            best_fit = fits[i_best]; best = [row[:] for row in pop[i_best]]
+            best_fit = fits[i_best]
+            best = [row[:] for row in pop[i_best]]
+        
+        fitness_history.append(best_fit)
+        
+        # Calcular métricas de esta generación
+        if collect_metrics and metrics:
+            diversity = calculate_diversity(pop, N)
+            convergence = calculate_convergence_rate(fitness_history)
+            perfect_count = count_perfect_solutions(pop, terminals)
+            
+            gen_metric = GenerationMetrics(
+                generation=gen,
+                best_fitness=best_fit,
+                avg_fitness=sum(fits) / len(fits),
+                worst_fitness=min(fits),
+                std_fitness=statistics.stdev(fits) if len(fits) > 1 else 0.0,
+                diversity_score=diversity,
+                convergence_rate=convergence,
+                perfect_solutions=perfect_count
+            )
+            metrics.add_generation_metric(gen_metric)
+        
         if verbose and gen % 50 == 0:
-            print(f"[GA] Gen {gen:4d} | best fitness = {best_fit:.2f}")
+            if collect_metrics and metrics:
+                last_metric = metrics.generation_metrics[-1]
+                print(f"[GA] Gen {gen:4d} | fitness: {best_fit:.2f} | "
+                      f"diversidad: {last_metric.diversity_score:.3f} | "
+                      f"perfectas: {last_metric.perfect_solutions}")
+            else:
+                print(f"[GA] Gen {gen:4d} | best fitness = {best_fit:.2f}")
+        
         if is_perfect(best, terminals):
             if verbose:
                 print(f"[GA] Solución perfecta en gen {gen}.")
-            return best
+            if collect_metrics and metrics:
+                metrics.generations_to_solution = gen
+            break
 
         # Nueva población con elitismo
         new_pop: List[List[List[str]]] = []
@@ -201,5 +258,13 @@ def ga_solve_flow(N: int,
             mutate_neighbor_color(child, fixed, mut_rate)
             new_pop.append(child)
         pop = new_pop
-
-    return best  # tal vez no perfecto
+    
+    # Finalizar métricas
+    if collect_metrics and metrics:
+        solution_found = best is not None and is_perfect(best, terminals)
+        metrics.finalize_metrics(solution_found, best_fit)
+    
+    if collect_metrics:
+        return best, metrics
+    else:
+        return best, None
