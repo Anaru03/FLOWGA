@@ -41,10 +41,23 @@ def main():
     """Función principal del programa."""
     # ---- Parámetros del tablero ----
     N = 5           # tamaño del tablero (p. ej., 5, 6, 7)
-    n_colors = 6    # número de colores
+    n_colors = 4    # número de colores (máximo recomendado: (N*N)//3)
 
     # ---- Generar puzzle aleatorio ----
-    terminals = generate_random_puzzle(N=N, n_colors=n_colors)
+    try:
+        terminals = generate_random_puzzle(N=N, n_colors=n_colors)
+    except ValueError as e:
+        print(f"\n{e}")
+        print(f"\n🔧 Regla práctica para puzzles válidos:")
+        print(f"   Máximo de colores ≤ (N × N) ÷ 3")
+        print(f"   Para tablero {N}x{N}: máximo {(N*N)//3} colores recomendados")
+        
+        print(f"\n📋 CONFIGURACIONES RECOMENDADAS:")
+        configs = [(4, 3), (5, 4), (6, 6), (7, 8), (8, 10)]
+        for size, colors in configs:
+            print(f"   • {size}x{size} tablero: hasta {colors} colores")
+        
+        return  # Salir de la función main
 
     # Construir el tablero con sólo terminales para mostrar
     puzzle = [["." for _ in range(N)] for _ in range(N)]

@@ -48,12 +48,30 @@ def generate_random_puzzle(N: int = 5, n_colors: int = 4,
     """Crea una solución "snake", la divide en segmentos y usa extremos como terminales."""
     if palette is None:
         palette = ["B", "R", "Y", "G", "O", "C"]
+    
+    # Validación de parámetros
+    total_cells = N * N
+    min_segment_length = max(2, N//2)
+    min_required_cells = n_colors * min_segment_length
+    max_possible_colors = total_cells // min_segment_length
+    
+    if min_required_cells > total_cells:
+        raise ValueError(
+            f"❌ CONFIGURACIÓN INVÁLIDA:\n"
+            f"   • Tablero: {N}x{N} = {total_cells} celdas\n"
+            f"   • Colores solicitados: {n_colors}\n"
+            f"   • Longitud mínima por segmento: {min_segment_length}\n"
+            f"   • Celdas mínimas necesarias: {n_colors} × {min_segment_length} = {min_required_cells}\n"
+            f"   • Máximo de colores posible: {max_possible_colors}\n\n"
+            f"💡 SOLUCIÓN: Usar máximo {max_possible_colors} colores para un tablero {N}x{N}"
+        )
+    
     colors = palette[:]
     shuffle(colors)
     colors = colors[:n_colors]
 
     path = serpentine_path(N)
-    cuts = random_splits(len(path), n_colors, min_len=max(2, N//2))
+    cuts = random_splits(len(path), n_colors, min_len=min_segment_length)
     segments = []
     prev = 0
     for cut in cuts + [len(path)]:
