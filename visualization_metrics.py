@@ -165,9 +165,19 @@ def analyze_convergence_patterns(metrics: GAMetrics):
     print("\n🔍 ANÁLISIS DE CONVERGENCIA:")
     
     fitness_evolution = metrics.fitness_evolution
-    if len(fitness_evolution) < 10:
-        print("   ⚠️  Datos insuficientes para análisis")
+    generations = len(fitness_evolution)
+    
+    if generations < 3:
+        print("   ⚠️  Muy pocas generaciones para análisis (mínimo 3)")
         return
+    elif generations < 5:
+        print("   ⚡ CONVERGENCIA ULTRARRÁPIDA:")
+        print(f"   • Solución encontrada en solo {generations} generaciones")
+        print(f"   • Mejora total: {max(fitness_evolution) - min(fitness_evolution):.1f} puntos")
+        print("   • Algoritmo extremadamente eficiente para este puzzle")
+        return
+    elif generations < 10:
+        print("   🚀 CONVERGENCIA RÁPIDA (análisis limitado):")
     
     # Calcular velocidad de convergencia
     improvements = []

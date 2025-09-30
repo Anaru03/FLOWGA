@@ -41,7 +41,7 @@ def main():
     """Función principal del programa."""
     # ---- Parámetros del tablero ----
     N = 5           # tamaño del tablero (p. ej., 5, 6, 7)
-    n_colors = 4    # número de colores
+    n_colors = 6    # número de colores
 
     # ---- Generar puzzle aleatorio ----
     terminals = generate_random_puzzle(N=N, n_colors=n_colors)
@@ -62,11 +62,11 @@ def main():
     if solver_mode in ("GA", "GA_THEN_BT"):
         # Ejecutar GA con métricas
         sol_ga, metrics = ga_solve_flow(N, terminals,
-                                       pop_size=220,
-                                       generations=2000,
+                                       pop_size=200,
+                                       generations=1000,
                                        mut_rate=0.03,
-                                       elite=4,
-                                       tour_k=4,
+                                       elite=0,
+                                       tour_k=1,
                                        verbose=True,
                                        collect_metrics=True)
         
