@@ -47,11 +47,31 @@ def generate_random_puzzle(N: int = 5, n_colors: int = 4,
                            palette: List[Color] = None) -> Dict[Color, Tuple[Coord, Coord]]:
     """Crea una solución "snake", la divide en segmentos y usa extremos como terminales."""
     if palette is None:
-        palette = ["B", "R", "Y", "G", "O", "C"]
+        # 🎨 Importar colores disponibles desde config
+        try:
+            from config import BACK
+
+            # Usar solo los colores que realmente están definidos en BACK
+            palette = list(BACK.keys())
+        except ImportError:
+            # Fallback: paleta básica de 6 colores garantizados
+            palette = ["B", "R", "Y", "G", "M", "C"]
+        
+        # 💡 Limitar a máximo 15 colores (por si acaso)
+        palette = palette[:15]
+    
+    # 🔍 VALIDACIÓN: Verificar que tenemos suficientes colores ÚNICOS
+    if len(palette) < n_colors:
+        raise ValueError(
+            f"❌ NO HAY SUFICIENTES COLORES ÚNICOS:\n"
+            f"   • Colores disponibles: {len(palette)} → {palette}\n"
+            f"   • Colores solicitados: {n_colors}\n\n"
+            f"💡 SOLUCIÓN: Usar máximo {len(palette)} colores o ampliar la paleta en config.py"
+        )
     
     # Validación de parámetros
     total_cells = N * N
-    min_segment_length = max(2, N//2)
+    min_segment_length = 2  # Mantener bajo para flexibilidad del GA
     min_required_cells = n_colors * min_segment_length
     max_possible_colors = total_cells // min_segment_length
     
@@ -83,7 +103,14 @@ def generate_random_puzzle(N: int = 5, n_colors: int = 4,
     for col, seg in zip(colors, segments):
         terminals[col] = (seg[0], seg[-1])
 
-    # aleatorizar orientación
+    # 🔥 MEJORA: Para tableros grandes (≥8×8), NO aplicar rotaciones/reflexiones
+    # que pueden romper la solubilidad garantizada del camino serpenteante
+    if N >= 8:
+        # Retornar directamente los terminales sin transformaciones
+        # Esto garantiza que el puzzle tiene solución
+        return terminals
+    
+    # Para tableros pequeños, aplicar transformaciones aleatorias
     rot_k = randint(0, 3)
     hflip = choice([False, True])
     new_terms = {}
@@ -95,7 +122,7 @@ def generate_random_puzzle(N: int = 5, n_colors: int = 4,
             bb = flip_coord(N, bb, True)
         new_terms[col] = (aa, bb)
 
-    # verificación rápida: backtracking debe poder resolver
+    # Validación con backtracking para tableros pequeños/medianos (ya no hay código para ≥8)
     if solve_flow_bt(N, new_terms) is None:
         return generate_random_puzzle(N, n_colors, palette)
     return new_terms

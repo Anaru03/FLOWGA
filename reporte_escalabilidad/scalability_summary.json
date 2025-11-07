@@ -1,0 +1,114 @@
+{
+  "4x4": {
+    "configuracion": {
+      "tablero": "4x4",
+      "celdas": 16,
+      "colores": 4,
+      "corridas": 15
+    },
+    "ga_metricas": {
+      "tasa_exito": "100.0%",
+      "tiempo_promedio": "0.047s",
+      "tiempo_std": "0.030s",
+      "generaciones_promedio": "2.9",
+      "evaluaciones_promedio": "573",
+      "generaciones_hasta_solucion": "2.9",
+      "generacion_convergencia": "N/A",
+      "perdida_diversidad": "-0.029"
+    },
+    "hibrido_metricas": {
+      "uso_backtracking": "0.0%",
+      "tiempo_bt_promedio": "0.000s",
+      "tiempo_total_promedio": "0.047s",
+      "tasa_exito_total": "100.0%"
+    },
+    "eficiencia": {
+      "score": "0.995",
+      "tasa_optimos_locales": "0.0%"
+    }
+  },
+  "5x5": {
+    "configuracion": {
+      "tablero": "5x5",
+      "celdas": 25,
+      "colores": 5,
+      "corridas": 15
+    },
+    "ga_metricas": {
+      "tasa_exito": "100.0%",
+      "tiempo_promedio": "0.086s",
+      "tiempo_std": "0.054s",
+      "generaciones_promedio": "3.6",
+      "evaluaciones_promedio": "720",
+      "generaciones_hasta_solucion": "3.6",
+      "generacion_convergencia": "N/A",
+      "perdida_diversidad": "-0.034"
+    },
+    "hibrido_metricas": {
+      "uso_backtracking": "0.0%",
+      "tiempo_bt_promedio": "0.000s",
+      "tiempo_total_promedio": "0.086s",
+      "tasa_exito_total": "100.0%"
+    },
+    "eficiencia": {
+      "score": "0.991",
+      "tasa_optimos_locales": "0.0%"
+    }
+  },
+  "6x6": {
+    "configuracion": {
+      "tablero": "6x6",
+      "celdas": 36,
+      "colores": 6,
+      "corridas": 15
+    },
+    "ga_metricas": {
+      "tasa_exito": "100.0%",
+      "tiempo_promedio": "0.215s",
+      "tiempo_std": "0.095s",
+      "generaciones_promedio": "6.7",
+      "evaluaciones_promedio": "1347",
+      "generaciones_hasta_solucion": "6.7",
+      "generacion_convergencia": "11.0",
+      "perdida_diversidad": "-0.066"
+    },
+    "hibrido_metricas": {
+      "uso_backtracking": "0.0%",
+      "tiempo_bt_promedio": "0.000s",
+      "tiempo_total_promedio": "0.215s",
+      "tasa_exito_total": "100.0%"
+    },
+    "eficiencia": {
+      "score": "0.979",
+      "tasa_optimos_locales": "0.0%"
+    }
+  },
+  "7x7": {
+    "configuracion": {
+      "tablero": "7x7",
+      "celdas": 49,
+      "colores": 7,
+      "corridas": 15
+    },
+    "ga_metricas": {
+      "tasa_exito": "100.0%",
+      "tiempo_promedio": "0.303s",
+      "tiempo_std": "0.159s",
+      "generaciones_promedio": "7.3",
+      "evaluaciones_promedio": "1453",
+      "generaciones_hasta_solucion": "7.3",
+      "generacion_convergencia": "11.0",
+      "perdida_diversidad": "-0.078"
+    },
+    "hibrido_metricas": {
+      "uso_backtracking": "0.0%",
+      "tiempo_bt_promedio": "0.000s",
+      "tiempo_total_promedio": "0.303s",
+      "tasa_exito_total": "100.0%"
+    },
+    "eficiencia": {
+      "score": "0.971",
+      "tasa_optimos_locales": "0.0%"
+    }
+  }
+}

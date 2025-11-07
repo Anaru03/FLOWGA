@@ -1,0 +1,30 @@
+{
+  "4": {
+    "max_solvable_colors": 6,
+    "max_density": 0.375,
+    "success_rate": 1.0,
+    "avg_time": 0.0517,
+    "reason": "Alta tasa de \u00e9xito mantenida"
+  },
+  "5": {
+    "max_solvable_colors": 9,
+    "max_density": 0.36,
+    "success_rate": 1.0,
+    "avg_time": 0.0489,
+    "reason": "Alta tasa de \u00e9xito mantenida"
+  },
+  "6": {
+    "max_solvable_colors": 10,
+    "max_density": 0.2778,
+    "success_rate": 1.0,
+    "avg_time": 0.2387,
+    "reason": "Alta tasa de \u00e9xito mantenida"
+  },
+  "7": {
+    "max_solvable_colors": 14,
+    "max_density": 0.2857,
+    "success_rate": 1.0,
+    "avg_time": 0.2489,
+    "reason": "Alta tasa de \u00e9xito mantenida"
+  }
+}

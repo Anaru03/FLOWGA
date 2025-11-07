@@ -1,0 +1,23 @@
+{
+  "4": {
+    "max_solvable_colors": 6,
+    "max_density": 0.375,
+    "success_rate": 1.0,
+    "avg_time": 0.0468,
+    "reason": "Alta tasa de \u00e9xito mantenida"
+  },
+  "5": {
+    "max_solvable_colors": 9,
+    "max_density": 0.36,
+    "success_rate": 1.0,
+    "avg_time": 0.0686,
+    "reason": "Alta tasa de \u00e9xito mantenida"
+  },
+  "6": {
+    "max_solvable_colors": 10,
+    "max_density": 0.2778,
+    "success_rate": 1.0,
+    "avg_time": 0.2214,
+    "reason": "Alta tasa de \u00e9xito mantenida"
+  }
+}

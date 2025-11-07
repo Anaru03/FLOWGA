@@ -9,6 +9,7 @@ try:
     from .metrics import GAMetrics
     from .puzzle_generator import generate_random_puzzle
     from .utils import Color, Coord
+    from .verify_solution import verify_solution_detailed
     from .visualization import print_grid_color
     from .visualization_metrics import (analyze_convergence_patterns,
                                         create_metrics_dashboard,
@@ -24,6 +25,7 @@ except ImportError:
     from metrics import GAMetrics
     from puzzle_generator import generate_random_puzzle
     from utils import Color, Coord
+    from verify_solution import verify_solution_detailed
     from visualization import print_grid_color
     try:
         from visualization_metrics import (analyze_convergence_patterns,
@@ -40,8 +42,32 @@ except ImportError:
 def main():
     """Función principal del programa."""
     # ---- Parámetros del tablero ----
-    N = 5           # tamaño del tablero (p. ej., 5, 6, 7)
-    n_colors = 4    # número de colores (máximo recomendado: (N*N)//3)
+    N = 9          # tamaño del tablero (p. ej., 5, 6, 7, 8)
+    n_colors = 9  # número de colores (máximo recomendado: (N*N)//3)
+    # 💡 IMPORTANTE: Para tableros grandes, usar MÁS colores facilita al GA
+    #    10×10 con 4 colores = 92 celdas libres (MUY difícil)
+    #    10×10 con 10 colores = 80 celdas libres (más manejable)
+
+    # 🔥 ADVERTENCIA PARA TABLEROS GRANDES
+    if N >= 10:
+        print(f"\n{Fore.RED}{'='*70}")
+        print(f"⚠️  ADVERTENCIA: TABLERO MUY GRANDE ({N}×{N})")
+        print(f"{'='*70}{Style.RESET_ALL}")
+        print(f"Los tableros de {N}×{N} son EXTREMADAMENTE difíciles para el GA:")
+        print(f"  • Espacio de búsqueda: ~10^{N*N//2} configuraciones")
+        print(f"  • El GA puede NO encontrar solución en tiempo razonable")
+        print(f"  • Tableros recomendados: 4×4 hasta 8×8")
+        print(f"\n{Fore.YELLOW}Límites prácticos conocidos:{Style.RESET_ALL}")
+        print(f"  ✅ 4×4 a 7×7: Funcionan bien (segundos)")
+        print(f"  ⚠️  8×8: Posible pero lento (minutos)")
+        print(f"  ❌ 9×9+: Probablemente irresoluble por GA")
+        print(f"  ❌ 15×15: CASI IMPOSIBLE (espacio gigantesco)")
+        
+        response = input(f"\n¿Continuar de todos modos? (s/n): ").strip().lower()
+        if response not in ['s', 'si', 'sí', 'y', 'yes']:
+            print("Operación cancelada.")
+            return
+        print()
 
     # ---- Generar puzzle aleatorio ----
     try:
@@ -73,10 +99,26 @@ def main():
     solution = None
 
     if solver_mode in ("GA", "GA_THEN_BT"):
+        # 🔥 PARÁMETROS ADAPTATIVOS según tamaño del tablero
+        if N >= 12:
+            pop_size, generations = 50, 100
+            print(f"{Fore.YELLOW}⚠️  Tablero {N}×{N}: usando {pop_size} pop × {generations} gen (exploración mínima){Style.RESET_ALL}")
+        elif N >= 10:
+            # 💡 MEJORADO: Más recursos para 10×10
+            pop_size, generations = 150, 500  # Antes: 75, 200
+            print(f"{Fore.YELLOW}⚠️  Tablero {N}×{N}: usando {pop_size} pop × {generations} gen (búsqueda intensiva){Style.RESET_ALL}")
+        elif N >= 8:
+            pop_size, generations = 100, 500
+            print(f"{Fore.CYAN}📉 Tablero {N}×{N}: usando {pop_size} pop × {generations} gen (búsqueda acotada){Style.RESET_ALL}")
+        elif N >= 7:
+            pop_size, generations = 150, 1000
+        else:
+            pop_size, generations = 200, 2000
+        
         # Ejecutar GA con métricas
         sol_ga, metrics = ga_solve_flow(N, terminals,
-                                       pop_size=200,
-                                       generations=1000,
+                                       pop_size=pop_size,
+                                       generations=generations,
                                        mut_rate=0.03,
                                        elite=0,
                                        tour_k=1,
@@ -86,6 +128,19 @@ def main():
         if sol_ga and is_perfect(sol_ga, terminals):
             solution = sol_ga
             print_grid_color(solution, terminals, "¡Solución (GA)!")
+            
+            # 🔍 VERIFICACIÓN DETALLADA de la solución
+            print(f"\n{Fore.CYAN}{'='*60}")
+            print(f"🔬 VERIFICACIÓN EXHAUSTIVA DE LA SOLUCIÓN")
+            print(f"{'='*60}{Style.RESET_ALL}")
+            is_valid = verify_solution_detailed(solution, terminals)
+            
+            if not is_valid:
+                print(f"\n{Fore.RED}⚠️  ALERTA: La solución reportada como 'perfecta' tiene problemas!{Style.RESET_ALL}")
+                print(f"Esto indica un bug en is_perfect() o en el algoritmo.")
+                solution = None  # Invalidar la solución
+            else:
+                print(f"\n{Fore.GREEN}✅ Solución verificada correctamente{Style.RESET_ALL}")
             
             # Mostrar métricas del algoritmo
             if metrics:
@@ -108,7 +163,13 @@ def main():
             solution = sol_bt
             print_grid_color(solution, terminals, "¡Solución (Backtracking)!")
         else:
-            print(Style.BRIGHT + Fore.RED + "Backtracking no encontró solución (no debería ocurrir con este generador)." + Style.RESET_ALL)
+            print(Style.BRIGHT + Fore.RED + 
+                  "❌ Backtracking no encontró solución.\n" +
+                  "   Posibles causas:\n" +
+                  "   • El puzzle generado puede no tener solución (tableros ≥8×8 no se validan)\n" +
+                  "   • El problema es demasiado complejo para el backtracking\n" +
+                  "   💡 Recomendación: usar tableros 4×4 a 7×7 para garantizar solubilidad" +
+                  Style.RESET_ALL)
 
 def print_metrics_summary(metrics: GAMetrics):
     """Imprime un resumen de las métricas del algoritmo genético."""
@@ -136,6 +197,7 @@ def print_metrics_summary(metrics: GAMetrics):
     print(f"   • Tiempo total: {perf['tiempo_total']:.3f} segundos")
     print(f"   • Tiempo por generación: {perf['tiempo_por_generacion']:.4f} segundos")
     print(f"   • Generaciones ejecutadas: {perf['generaciones_ejecutadas']}")
+    print(f"   • Evaluaciones de fitness: {perf['evaluaciones_fitness']}")
     if perf['generaciones_hasta_solucion']:
         print(f"   • Generaciones hasta solución: {perf['generaciones_hasta_solucion']}")
     if perf['generacion_convergencia']:

@@ -14,20 +14,59 @@ except Exception:
     COLOR_ENABLED = False
 
 # ====== paleta de colores (añade los que quieras) ======
-BACK = {"B": Back.BLUE, "R": Back.RED, "Y": Back.YELLOW, "G": Back.GREEN,
-    "O": Back.MAGENTA, "C": Back.CYAN}
-# Añadir algunos alias/colores extras (si colorama está presente se usarán)
-BACK.update({"P": getattr(Back, 'LIGHTMAGENTA_EX', Back.MAGENTA),
-         "W": getattr(Back, 'WHITE', Back.RESET),
-         "K": getattr(Back, 'BLACK', Back.RESET),
-         "M": getattr(Back, 'LIGHTCYAN_EX', Back.CYAN)})
+# 🎨 Paleta BASE con 6 colores sólidos y distintos
+BACK = {
+    "B": Back.BLUE,      # Azul
+    "R": Back.RED,       # Rojo
+    "Y": Back.YELLOW,    # Amarillo
+    "G": Back.GREEN,     # Verde
+    "M": Back.MAGENTA,   # Magenta/Morado
+    "C": Back.CYAN       # Cyan/Celeste
+}
 
-FORE = {"B": Fore.BLUE, "R": Fore.RED, "Y": Fore.YELLOW, "G": Fore.GREEN,
-    "O": Fore.MAGENTA, "C": Fore.CYAN}
-FORE.update({"P": getattr(Fore, 'LIGHTMAGENTA_EX', Fore.MAGENTA),
-         "W": getattr(Fore, 'WHITE', Fore.RESET),
-         "K": getattr(Fore, 'BLACK', Fore.RESET),
-         "M": getattr(Fore, 'LIGHTCYAN_EX', Fore.CYAN)})
+# 🎨 Colores adicionales SOLO si están disponibles (hasta 15 colores)
+# Usamos los LIGHT* variants solo si existen, sino repetimos con Style.BRIGHT
+try:
+    BACK.update({
+        "W": Back.WHITE,                                    # Blanco (7)
+        "K": getattr(Back, 'LIGHTBLACK_EX', Back.BLACK),   # Gris (8)
+        "L": getattr(Back, 'LIGHTBLUE_EX', None),          # Azul claro (9)
+        "N": getattr(Back, 'LIGHTGREEN_EX', None),         # Verde claro (10)
+        "T": getattr(Back, 'LIGHTYELLOW_EX', None),        # Amarillo claro (11)
+        "V": getattr(Back, 'LIGHTRED_EX', None),           # Rojo claro (12)
+        "P": getattr(Back, 'LIGHTMAGENTA_EX', None),       # Magenta claro (13)
+        "X": getattr(Back, 'LIGHTCYAN_EX', None),          # Cyan claro (14)
+        "O": getattr(Back, 'LIGHTWHITE_EX', None),         # Blanco brillante (15)
+    })
+    # Limpiar los None (colores no disponibles)
+    BACK = {k: v for k, v in BACK.items() if v is not None}
+except Exception:
+    pass  # Mantener solo los 6 colores base
+
+FORE = {
+    "B": Fore.BLUE,
+    "R": Fore.RED,
+    "Y": Fore.YELLOW,
+    "G": Fore.GREEN,
+    "M": Fore.MAGENTA,
+    "C": Fore.CYAN
+}
+
+try:
+    FORE.update({
+        "W": Fore.WHITE,
+        "K": getattr(Fore, 'LIGHTBLACK_EX', Fore.BLACK),
+        "L": getattr(Fore, 'LIGHTBLUE_EX', None),
+        "N": getattr(Fore, 'LIGHTGREEN_EX', None),
+        "T": getattr(Fore, 'LIGHTYELLOW_EX', None),
+        "V": getattr(Fore, 'LIGHTRED_EX', None),
+        "P": getattr(Fore, 'LIGHTMAGENTA_EX', None),
+        "X": getattr(Fore, 'LIGHTCYAN_EX', None),
+        "O": getattr(Fore, 'LIGHTWHITE_EX', None),
+    })
+    FORE = {k: v for k, v in FORE.items() if v is not None}
+except Exception:
+    pass
 
 # Parametrización del fitness (valores por defecto que pueden overridearse por CLI)
 FIT_PARAMS = {

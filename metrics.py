@@ -46,6 +46,9 @@ class GAMetrics:
     final_best_fitness: float = 0.0
     success: bool = False
     
+    # Métricas de evaluaciones
+    total_fitness_evaluations: int = 0
+    
     # Métricas de rendimiento por generación
     generation_metrics: List[GenerationMetrics] = field(default_factory=list)
     
@@ -158,7 +161,8 @@ class GAMetrics:
                 'tiempo_por_generacion': round(self.avg_generation_time, 4),
                 'generaciones_ejecutadas': len(self.generation_metrics),
                 'generaciones_hasta_solucion': self.generations_to_solution,
-                'generacion_convergencia': self.convergence_generation
+                'generacion_convergencia': self.convergence_generation,
+                'evaluaciones_fitness': self.total_fitness_evaluations
             },
             'fitness': {
                 'fitness_final': round(self.final_best_fitness, 2),

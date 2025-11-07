@@ -129,11 +129,41 @@ def fitness(grid: List[List[str]], terminals: Dict[Color, Tuple[Coord, Coord]]) 
     return score
 
 def is_perfect(grid: List[List[str]], terminals: Dict[Color, Tuple[Coord, Coord]]) -> bool:
-    """Verifica si la solución es perfecta (todos los terminales conectados)."""
+    """Verifica si la solución es perfecta (todos los terminales conectados Y cada color forma UN solo componente)."""
+    N = len(grid)
+    
+    # 1. Verificar que cada par de terminales esté conectado
     for col, (a, b) in terminals.items():
         ok, _ = bfs_connected(grid, col, a, b)
         if not ok:
             return False
+    
+    # 2. CRÍTICO: Verificar que cada color forma EXACTAMENTE UN componente conexo
+    #    (no puede haber "islas" de color desconectadas)
+    for col in terminals.keys():
+        visited = set()
+        components = 0
+        
+        for r in range(N):
+            for c in range(N):
+                if grid[r][c] == col and (r, c) not in visited:
+                    components += 1
+                    if components > 1:
+                        # Más de un componente detectado = solución inválida
+                        return False
+                    
+                    # BFS para marcar todo el componente
+                    from collections import deque
+                    q = deque([(r, c)])
+                    visited.add((r, c))
+                    while q:
+                        rr, cc = q.popleft()
+                        for dr, dc in ((1,0),(-1,0),(0,1),(0,-1)):
+                            nr, nc = rr + dr, cc + dc
+                            if 0 <= nr < N and 0 <= nc < N and grid[nr][nc] == col and (nr, nc) not in visited:
+                                visited.add((nr, nc))
+                                q.append((nr, nc))
+    
     return True
 
 def tournament_select(pop: List[List[List[str]]], fits: List[float], k: int = 3) -> int:
@@ -202,15 +232,49 @@ def ga_solve_flow(N: int,
     best, best_fit = None, -1e18
     fitness_history = []
     
+    # 🔥 DETECCIÓN DE ESTANCAMIENTO: Detener si no hay mejora en N generaciones
+    # Esto es crítico para tableros grandes donde el GA puede quedarse atascado
+    # 💡 AJUSTE: Para tableros grandes, ser más paciente antes de declarar estancamiento
+    if N >= 10:
+        stagnation_limit = max(generations // 2, 100)  # Más generoso para tableros grandes
+    elif N >= 8:
+        stagnation_limit = generations // 2  # 8×8 y 9×9: también necesitan paciencia
+    else:
+        stagnation_limit = min(200, generations // 3)  # Original para tableros pequeños
+    
+    generations_without_improvement = 0
+    last_improvement_fitness = -1e18
+    
     for gen in range(1, generations+1):
         fits = [fitness(ind, terminals) for ind in pop]
+        
+        # Contar evaluaciones de fitness
+        if collect_metrics and metrics:
+            metrics.total_fitness_evaluations += len(fits)
+        
         i_best = max(range(pop_size), key=lambda i: fits[i])
         
         if fits[i_best] > best_fit:
             best_fit = fits[i_best]
             best = [row[:] for row in pop[i_best]]
+            
+            # 🔥 Resetear contador de estancamiento si hay mejora significativa
+            if fits[i_best] > last_improvement_fitness + 10.0:  # Mejora significativa
+                last_improvement_fitness = fits[i_best]
+                generations_without_improvement = 0
+            else:
+                generations_without_improvement += 1
+        else:
+            generations_without_improvement += 1
         
         fitness_history.append(best_fit)
+        
+        # 🔥 DETECCIÓN TEMPRANA: Si estancado por mucho tiempo, detener
+        if generations_without_improvement >= stagnation_limit:
+            if verbose:
+                print(f"[GA] ⚠️  Estancamiento detectado en gen {gen} ({generations_without_improvement} gens sin mejora)")
+                print(f"[GA] 🛑 Problema probablemente irresoluble para este GA (fitness={best_fit:.2f})")
+            break
         
         # Calcular métricas de esta generación
         if collect_metrics and metrics:
