@@ -1,0 +1,70 @@
+=================================================================
+  FLOW GENETIC ALGORITHM - IMPROVED VERSION
+  Features: A* Init, Path-aware Mutation, Local Repair
+=================================================================
+Configuration:
+  Board size:      8x8 (64 cells)
+  Colors:          10
+  Population:      800
+  Generations:     6000
+  Mutation rate:   0.050
+  Elite size:      3
+  Tournament K:    4
+  Threads:         16
+  Random seed:     81041
+=================================================================
+
+Generated puzzle with 10 colors
+Terminals:
+  A: (7,6) -> (1,5)
+  B: (5,4) -> (7,4)
+  C: (6,7) -> (3,4)
+  D: (6,5) -> (4,5)
+  E: (6,6) -> (1,4)
+  F: (7,7) -> (2,5)
+  G: (3,3) -> (3,5)
+  H: (0,3) -> (5,3)
+  I: (1,1) -> (4,4)
+  J: (2,0) -> (5,2)
+
+Initializing population with A* pathfinding...
+Population initialized. Starting evolution...
+
+
+=================================================================
+  RESULTS
+=================================================================
+Generations executed: 2013
+Best fitness:         11693.00
+Average fitness:      5930.43
+Perfect solution:     NO ✗
+Elapsed time:         6.483 seconds
+
+⚠️  No perfect solution found. Try increasing --pop or --gen
+=================================================================
+
+Best solution found:
+┌────────────────┐
+│I I I H E A A A │
+│I I I H E E A A │
+│J I I F E F F F │
+│J I I G C C C F │
+│J J I I I D C F │
+│J J J H B D C C │
+│J J B B B D E C │
+│B B B B B A A F │
+└────────────────┘
+
+Detailed analysis:
+  Color A: NOT connected | Size: 2 | Components: 2
+  Color B: Connected | Size: 9 | Components: 1
+  Color C: Connected | Size: 7 | Components: 1
+  Color D: Connected | Size: 3 | Components: 1
+  Color E: NOT connected | Size: 1 | Components: 2
+  Color F: NOT connected | Size: 1 | Components: 3
+  Color G: NOT connected | Size: 1 | Components: 1
+  Color H: NOT connected | Size: 2 | Components: 2
+  Color I: Connected | Size: 13 | Components: 1
+  Color J: Connected | Size: 9 | Components: 1
+
+Connected colors: 5/10

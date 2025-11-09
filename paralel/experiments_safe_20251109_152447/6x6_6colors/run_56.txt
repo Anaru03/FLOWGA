@@ -1,0 +1,60 @@
+=================================================================
+  FLOW GENETIC ALGORITHM - IMPROVED VERSION
+  Features: A* Init, Path-aware Mutation, Local Repair
+=================================================================
+Configuration:
+  Board size:      6x6 (36 cells)
+  Colors:          6
+  Population:      350
+  Generations:     3000
+  Mutation rate:   0.050
+  Elite size:      3
+  Tournament K:    4
+  Threads:         16
+  Random seed:     37148
+=================================================================
+
+Generated puzzle with 6 colors
+Terminals:
+  A: (3,4) -> (0,4)
+  B: (1,1) -> (4,3)
+  C: (4,2) -> (2,3)
+  D: (1,5) -> (0,3)
+  E: (2,4) -> (3,1)
+  F: (0,0) -> (5,4)
+
+Initializing population with A* pathfinding...
+Population initialized. Starting evolution...
+
+
+=================================================================
+  RESULTS
+=================================================================
+Generations executed: 1777
+Best fitness:         13010.00
+Average fitness:      9385.11
+Perfect solution:     NO ✗
+Elapsed time:         1.357 seconds
+
+⚠️  No perfect solution found. Try increasing --pop or --gen
+=================================================================
+
+Best solution found:
+┌────────────┐
+│F B B D D D │
+│F B B B D D │
+│F E E B A A │
+│F E E B A A │
+│F F C B A A │
+│F F F F F A │
+└────────────┘
+
+Detailed analysis:
+  Color A: NOT connected | Size: 7 | Components: 1
+  Color B: Connected | Size: 8 | Components: 1
+  Color C: NOT connected | Size: 1 | Components: 1
+  Color D: Connected | Size: 5 | Components: 1
+  Color E: NOT connected | Size: 1 | Components: 1
+  Color F: Connected | Size: 11 | Components: 1
+
+Connected colors: 3/6
