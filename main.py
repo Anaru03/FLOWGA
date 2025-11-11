@@ -42,28 +42,59 @@ except ImportError:
 def main():
     """Función principal del programa."""
     # ---- Parámetros del tablero ----
-    N = 9          # tamaño del tablero (p. ej., 5, 6, 7, 8)
-    n_colors = 9  # número de colores (máximo recomendado: (N*N)//3)
-    # 💡 IMPORTANTE: Para tableros grandes, usar MÁS colores facilita al GA
-    #    10×10 con 4 colores = 92 celdas libres (MUY difícil)
-    #    10×10 con 10 colores = 80 celdas libres (más manejable)
+    N = 10          # tamaño del tablero (p. ej., 5, 6, 7, 8, 10)
+    n_colors = 15   # número de colores (MÁXIMO disponible en la paleta)
+    # 💡 REGLA DE ORO PARA TABLEROS GRANDES:
+    #    • 10×10: usar 15 colores (deja 70 celdas libres) - límite de paleta actual
+    #    • Para más colores, ampliar paleta en config.py
+    #    • 8×8:  usar 10-13 colores
+    #    • 7×7:  usar 7-10 colores
+    #    • Más colores = problema más fácil para el GA
+    
+    # 🔧 CONFIGURACIÓN DE MÉTRICAS
+    # Cambia a False si NO quieres generar archivos JSON de métricas
+    GUARDAR_METRICAS = True  # True = genera JSON + gráficas, False = solo solución
 
-    # 🔥 ADVERTENCIA PARA TABLEROS GRANDES
+    #  ADVERTENCIA PARA TABLEROS GRANDES
     if N >= 10:
-        print(f"\n{Fore.RED}{'='*70}")
-        print(f"⚠️  ADVERTENCIA: TABLERO MUY GRANDE ({N}×{N})")
+        print(f"\n{Fore.CYAN}{'='*70}")
+        print(f"📋 TABLERO GRANDE DETECTADO: {N}×{N}")
         print(f"{'='*70}{Style.RESET_ALL}")
-        print(f"Los tableros de {N}×{N} son EXTREMADAMENTE difíciles para el GA:")
-        print(f"  • Espacio de búsqueda: ~10^{N*N//2} configuraciones")
-        print(f"  • El GA puede NO encontrar solución en tiempo razonable")
-        print(f"  • Tableros recomendados: 4×4 hasta 8×8")
-        print(f"\n{Fore.YELLOW}Límites prácticos conocidos:{Style.RESET_ALL}")
-        print(f"  ✅ 4×4 a 7×7: Funcionan bien (segundos)")
-        print(f"  ⚠️  8×8: Posible pero lento (minutos)")
-        print(f"  ❌ 9×9+: Probablemente irresoluble por GA")
-        print(f"  ❌ 15×15: CASI IMPOSIBLE (espacio gigantesco)")
         
-        response = input(f"\n¿Continuar de todos modos? (s/n): ").strip().lower()
+        # Calcular métricas del problema
+        total_cells = N * N
+        terminal_cells = n_colors * 2
+        free_cells = total_cells - terminal_cells
+        optimal_colors = N * N // 5  # Regla: 20% del tablero en colores
+        
+        print(f"📊 Análisis de complejidad:")
+        print(f"   • Celdas totales: {total_cells}")
+        print(f"   • Celdas ocupadas por terminales: {terminal_cells}")
+        print(f"   • Celdas libres a conectar: {free_cells}")
+        print(f"   • Complejidad estimada: ~10^{free_cells//4}")
+        
+        # Advertencias según el número de colores
+        if n_colors < 15:
+            print(f"\n{Fore.RED} ADVERTENCIA: Pocos colores para este tamaño{Style.RESET_ALL}")
+            print(f"   • Colores actuales: {n_colors}")
+            print(f"   • Colores disponibles en paleta: 15")
+            print(f"   • Colores óptimos (teóricos): {optimal_colors}")
+            print(f"   • Problema: {free_cells} celdas libres es DIFÍCIL para el GA")
+            print(f"\n{Fore.YELLOW}💡 Sugerencia: Usar 15 colores (máximo disponible){Style.RESET_ALL}")
+        else:
+            print(f"\n{Fore.GREEN}✅ Usando máximo de colores disponibles{Style.RESET_ALL}")
+            print(f"   • Colores: {n_colors} (máximo en paleta actual)")
+            print(f"   • Para más colores, ampliar paleta en config.py")
+        
+        print(f"\n{Fore.YELLOW}  Tiempo estimado de ejecución:{Style.RESET_ALL}")
+        if n_colors >= 12:
+            print(f"   • Con GA: 60-180 segundos (búsqueda intensiva)")
+            print(f"   • Con Backtracking: 10-120 segundos (reparación desde GA)")
+        else:
+            print(f"   • Con GA: 3-15 minutos (MUY difícil encontrar solución)")
+            print(f"   • Con Backtracking: 1-10 minutos (si el puzzle es válido)")
+        
+        response = input(f"\n¿Continuar con esta configuración? (s/n): ").strip().lower()
         if response not in ['s', 'si', 'sí', 'y', 'yes']:
             print("Operación cancelada.")
             return
@@ -101,29 +132,31 @@ def main():
     if solver_mode in ("GA", "GA_THEN_BT"):
         # 🔥 PARÁMETROS ADAPTATIVOS según tamaño del tablero
         if N >= 12:
-            pop_size, generations = 50, 100
-            print(f"{Fore.YELLOW}⚠️  Tablero {N}×{N}: usando {pop_size} pop × {generations} gen (exploración mínima){Style.RESET_ALL}")
+            # Tableros muy grandes: recursos moderados (puede ser lento)
+            pop_size, generations = 100, 300
+            print(f"{Fore.YELLOW}⚠️  Tablero {N}×{N}: usando {pop_size} pop × {generations} gen (exploración moderada){Style.RESET_ALL}")
         elif N >= 10:
-            # 💡 MEJORADO: Más recursos para 10×10
-            pop_size, generations = 150, 500  # Antes: 75, 200
-            print(f"{Fore.YELLOW}⚠️  Tablero {N}×{N}: usando {pop_size} pop × {generations} gen (búsqueda intensiva){Style.RESET_ALL}")
+            # 💡 MEJORADO: MUCHO más recursos para 10×10
+            pop_size, generations = 300, 1000  # 2× población, 2× generaciones
+            print(f"{Fore.YELLOW}🔥 Tablero {N}×{N}: usando {pop_size} pop × {generations} gen (búsqueda INTENSIVA){Style.RESET_ALL}")
+            print(f"{Fore.CYAN}   💡 Recomendación: usar al menos {N*N//5} colores para mejorar convergencia{Style.RESET_ALL}")
         elif N >= 8:
-            pop_size, generations = 100, 500
-            print(f"{Fore.CYAN}📉 Tablero {N}×{N}: usando {pop_size} pop × {generations} gen (búsqueda acotada){Style.RESET_ALL}")
+            pop_size, generations = 150, 800
+            print(f"{Fore.CYAN}📉 Tablero {N}×{N}: usando {pop_size} pop × {generations} gen (búsqueda reforzada){Style.RESET_ALL}")
         elif N >= 7:
             pop_size, generations = 150, 1000
         else:
             pop_size, generations = 200, 2000
         
-        # Ejecutar GA con métricas
+        # Ejecutar GA con métricas (si está habilitado)
         sol_ga, metrics = ga_solve_flow(N, terminals,
                                        pop_size=pop_size,
                                        generations=generations,
-                                       mut_rate=0.03,
-                                       elite=0,
-                                       tour_k=1,
+                                       mut_rate=0.05,  # Más mutación para explorar mejor
+                                       elite=5,        # Mantener mejores soluciones
+                                       tour_k=3,       # Torneo más selectivo
                                        verbose=True,
-                                       collect_metrics=True)
+                                       collect_metrics=GUARDAR_METRICAS)  # Solo si está activado
         
         if sol_ga and is_perfect(sol_ga, terminals):
             solution = sol_ga
@@ -142,37 +175,64 @@ def main():
             else:
                 print(f"\n{Fore.GREEN}✅ Solución verificada correctamente{Style.RESET_ALL}")
             
-            # Mostrar métricas del algoritmo
-            if metrics:
-                print_metrics_summary(metrics)
+            # Mostrar métricas del algoritmo (solo si se recolectaron)
+            if metrics and GUARDAR_METRICAS:
+                print_metrics_summary(metrics, save_to_file=True)
+            elif not GUARDAR_METRICAS:
+                print(f"\n{Fore.CYAN}💡 Métricas desactivadas. Para ver estadísticas detalladas, cambiar GUARDAR_METRICAS=True en main.py{Style.RESET_ALL}")
                 
         elif solver_mode == "GA":
             print(Style.BRIGHT + Fore.YELLOW + "GA no llegó a solución perfecta; mostrando mejor individuo." + Style.RESET_ALL)
             if sol_ga:
                 print_grid_color(sol_ga, terminals, "Mejor individuo (GA):")
-            if metrics:
-                print_metrics_summary(metrics)
+            if metrics and GUARDAR_METRICAS:
+                print_metrics_summary(metrics, save_to_file=True)
 
     if solution is None and solver_mode in ("BT", "GA_THEN_BT"):
+        print(f"\n{Fore.YELLOW}🔄 Intentando resolver con Backtracking...{Style.RESET_ALL}")
+        
         # Si hay una solución del GA, úsala como punto de partida para el Backtracking
         if 'sol_ga' in locals() and sol_ga is not None:
+            print(f"   💡 Usando mejor solución del GA como punto de partida")
             sol_bt = solve_flow_bt(N, terminals, start_grid=sol_ga)
         else:
             sol_bt = solve_flow_bt(N, terminals)
+        
         if sol_bt:
             solution = sol_bt
             print_grid_color(solution, terminals, "¡Solución (Backtracking)!")
+            
+            # Verificar la solución
+            print(f"\n{Fore.CYAN}{'='*60}")
+            print(f"🔬 VERIFICACIÓN DE LA SOLUCIÓN")
+            print(f"{'='*60}{Style.RESET_ALL}")
+            is_valid = verify_solution_detailed(solution, terminals)
+            
+            if is_valid:
+                print(f"\n{Fore.GREEN}✅ Solución verificada correctamente{Style.RESET_ALL}")
+            else:
+                print(f"\n{Fore.RED}⚠️  La solución tiene problemas{Style.RESET_ALL}")
         else:
-            print(Style.BRIGHT + Fore.RED + 
-                  "❌ Backtracking no encontró solución.\n" +
-                  "   Posibles causas:\n" +
-                  "   • El puzzle generado puede no tener solución (tableros ≥8×8 no se validan)\n" +
-                  "   • El problema es demasiado complejo para el backtracking\n" +
-                  "   💡 Recomendación: usar tableros 4×4 a 7×7 para garantizar solubilidad" +
-                  Style.RESET_ALL)
+            print(f"\n{Style.BRIGHT}{Fore.RED}{'='*60}")
+            print(f"❌ NO SE ENCONTRÓ SOLUCIÓN")
+            print(f"{'='*60}{Style.RESET_ALL}")
+            print(f"Posibles causas:")
+            print(f"  1️⃣  El puzzle generado NO tiene solución válida")
+            print(f"  2️⃣  El backtracking alcanzó el límite de caminos explorados")
+            print(f"  3️⃣  El problema es demasiado complejo")
+            print(f"\n{Fore.YELLOW}💡 Soluciones sugeridas:{Style.RESET_ALL}")
+            print(f"  • Volver a ejecutar (genera un nuevo puzzle)")
+            print(f"  • Reducir el tamaño del tablero (usar {N-2}×{N-2})")
+            print(f"  • Aumentar el número de colores (usar {n_colors + 5} colores)")
+            print(f"  • Para tableros grandes, el GA suele funcionar mejor que backtracking")
 
-def print_metrics_summary(metrics: GAMetrics):
-    """Imprime un resumen de las métricas del algoritmo genético."""
+def print_metrics_summary(metrics: GAMetrics, save_to_file: bool = True):
+    """Imprime un resumen de las métricas del algoritmo genético.
+    
+    Args:
+        metrics: Objeto GAMetrics con los datos recolectados
+        save_to_file: Si True, guarda el JSON. Si False, solo muestra en pantalla
+    """
     summary = metrics.get_summary()
     
     print("\n" + "="*60)
@@ -228,13 +288,16 @@ def print_metrics_summary(metrics: GAMetrics):
     
     print("="*60)
     
-    # Guardar métricas en archivo JSON
-    filename = f"metricas_flow_{config['tablero']}_{config['colores']}c.json"
-    metrics.export_to_json(filename)
-    print(f"📁 Métricas guardadas en: {filename}")
+    # Guardar métricas en archivo JSON (solo si está habilitado)
+    if save_to_file:
+        filename = f"metricas_flow_{config['tablero']}_{config['colores']}c.json"
+        metrics.export_to_json(filename)
+        print(f"📁 Métricas guardadas en: {filename}")
+    else:
+        print(f"💡 Archivo JSON NO guardado (save_to_file=False)")
     
-    # Análisis avanzado y visualizaciones
-    if HAS_VISUALIZATION:
+    # Análisis avanzado y visualizaciones (solo si se guardan métricas)
+    if HAS_VISUALIZATION and save_to_file:
         print("\n" + "="*60)
         print("📊 ANÁLISIS AVANZADO Y VISUALIZACIONES")
         print("="*60)

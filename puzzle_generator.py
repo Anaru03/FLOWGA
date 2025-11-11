@@ -103,14 +103,25 @@ def generate_random_puzzle(N: int = 5, n_colors: int = 4,
     for col, seg in zip(colors, segments):
         terminals[col] = (seg[0], seg[-1])
 
-    # 🔥 MEJORA: Para tableros grandes (≥8×8), NO aplicar rotaciones/reflexiones
-    # que pueden romper la solubilidad garantizada del camino serpenteante
-    if N >= 8:
-        # Retornar directamente los terminales sin transformaciones
-        # Esto garantiza que el puzzle tiene solución
+    # 🔥 ESTRATEGIA PARA TABLEROS GRANDES (≥8×8):
+    # En lugar de validar (muy lento), usar MENOS transformaciones
+    # El camino serpentino SIEMPRE tiene solución, las transformaciones pueden romperlo
+    
+    if N >= 10:
+        # 🎯 Para 10×10+: SIN transformaciones (garantiza solución)
         return terminals
     
-    # Para tableros pequeños, aplicar transformaciones aleatorias
+    elif N >= 8:
+        # 🎯 Para 8×8-9×9: Solo rotaciones (sin flip que puede romper solución)
+        rot_k = choice([0, 1, 2, 3])  # Solo rotar
+        new_terms = {}
+        for col, (a, b) in terminals.items():
+            aa = rotate_coord(N, a, rot_k)
+            bb = rotate_coord(N, b, rot_k)
+            new_terms[col] = (aa, bb)
+        return new_terms
+    
+    # Para tableros pequeños (<8), aplicar transformaciones completas y validar
     rot_k = randint(0, 3)
     hflip = choice([False, True])
     new_terms = {}
