@@ -8,7 +8,7 @@ import os
 import statistics
 import time
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -89,27 +89,31 @@ def run_single_experiment(board_size: int,
     num_cells = board_size * board_size
     
     # 🔥 GENERACIONES Y POBLACIÓN ADAPTATIVAS para tableros grandes
+    # Configuración mejorada para dar al GA una oportunidad real de encontrar soluciones
     adaptive_generations = generations
     adaptive_pop_size = pop_size
     density = num_colors / num_cells
     
-    # Reducción AGRESIVA de generaciones Y población para tableros grandes
-    # El costo crece exponencialmente: cada fitness hace BFS por cada color
+    # Configuración balanceada: suficiente exploración sin explotar el tiempo
+    # AJUSTE CRÍTICO: 8×8 necesita MÁS recursos que 7×7 debido al salto en complejidad
     if board_size >= 10:
-        adaptive_generations = 15  # 🔥 ULTRA minimal
-        adaptive_pop_size = 50     # 🔥 Población reducida drásticamente
-        print(f"   {Fore.RED}⚠️  Tablero 10×10+: {adaptive_generations} gens × {adaptive_pop_size} pop (exploración ULTRA mínima){Style.RESET_ALL}")
+        adaptive_generations = 300  # 🔥 Suficiente para exploración seria
+        adaptive_pop_size = 200     # 🔥 Población razonable
+        print(f"   {Fore.CYAN}📊 Tablero 10×10: {adaptive_generations} gens × {adaptive_pop_size} pop (búsqueda intensiva){Style.RESET_ALL}")
     elif board_size >= 9:
-        adaptive_generations = 30  # 🔥 Muy reducido
-        adaptive_pop_size = 75     # 🔥 Población menor
-        print(f"   {Fore.YELLOW}⚠️  Tablero 9×9: {adaptive_generations} gens × {adaptive_pop_size} pop (exploración mínima){Style.RESET_ALL}")
-    elif board_size >= 8:
-        adaptive_generations = 50  # 🔥 Búsqueda limitada
-        adaptive_pop_size = 100    # 🔥 Población reducida a la mitad
-        print(f"   {Fore.YELLOW}⚠️  Tablero 8×8: {adaptive_generations} gens × {adaptive_pop_size} pop (búsqueda acotada){Style.RESET_ALL}")
+        adaptive_generations = 500  # 🔥 Exploración robusta
+        adaptive_pop_size = 200     # 🔥 Población amplia
+        print(f"   {Fore.CYAN}📊 Tablero 9×9: {adaptive_generations} gens × {adaptive_pop_size} pop (búsqueda robusta){Style.RESET_ALL}")
+    elif board_size == 8:
+        # 🔥 AJUSTE CRÍTICO: 8×8 es el punto de transición donde crece la complejidad exponencialmente
+        # Necesita tantos recursos como 7×7 (o más) para evitar convergencia prematura
+        adaptive_generations = 1000  # Aumentado de 800 para evitar óptimos locales
+        adaptive_pop_size = 200      # Aumentado de 150 para mayor diversidad
+        print(f"   {Fore.YELLOW}⚡ Tablero 8×8 (punto crítico): {adaptive_generations} gens × {adaptive_pop_size} pop = {adaptive_generations*adaptive_pop_size:,} evaluaciones{Style.RESET_ALL}")
     elif board_size >= 7 or density > 0.35:
-        adaptive_generations = min(500, generations)
-        print(f"{Fore.CYAN}📉 Generaciones reducidas a {adaptive_generations} para problema complejo{Style.RESET_ALL}")
+        adaptive_generations = 1000  # Mantener consistencia con 8×8
+        adaptive_pop_size = 150
+        print(f"   {Fore.CYAN}� Tablero {board_size}×{board_size}: {adaptive_generations} gens × {adaptive_pop_size} pop{Style.RESET_ALL}")
     
     # Ejecutar GA con parámetros adaptados
     ga_start = time.time()
@@ -206,16 +210,26 @@ def run_scalability_experiments(
     print(f"Población: {pop_size}, Generaciones: {generations}")
     print("="*80 + "\n")
     
-    for board_size in board_sizes:
+    total_configs = len(board_sizes)
+    
+    for config_idx, board_size in enumerate(board_sizes, 1):
         num_colors = colors_config.get(board_size, board_size // 2)
         results[board_size] = []
         
-        print(f"\n{'='*60}")
-        print(f"📐 TABLERO {board_size}x{board_size} ({board_size*board_size} celdas, {num_colors} colores)")
-        print(f"{'='*60}")
+        print(f"\n{'='*80}")
+        print(f"📐 CONFIGURACIÓN [{config_idx}/{total_configs}]: TABLERO {board_size}x{board_size}")
+        print(f"{'='*80}")
+        print(f"Celdas: {board_size*board_size} | Colores: {num_colors} | Corridas: {runs_per_size}")
+        print(f"{'='*80}")
         
         for run in range(1, runs_per_size + 1):
-            print(f"\n  Corrida {run}/{runs_per_size}...", end=" ", flush=True)
+            # Barra de progreso de corridas
+            run_progress = (run / runs_per_size) * 100
+            bar_length = 30
+            filled = int(bar_length * run / runs_per_size)
+            bar = '█' * filled + '░' * (bar_length - filled)
+            
+            print(f"\n  [{bar}] {run_progress:5.1f}% | Corrida {run}/{runs_per_size}...", end=" ", flush=True)
             
             try:
                 result = run_single_experiment(
@@ -493,6 +507,150 @@ def identify_inefficiency_threshold(summaries: Dict[int, ScalabilitySummary],
     return inefficient_size
 
 
+def identify_practical_limits(summaries: Dict[int, ScalabilitySummary],
+                              max_time_ga: float = 60.0,
+                              max_time_hybrid: float = 120.0,
+                              min_success_ga: float = 0.5,
+                              min_success_hybrid: float = 0.8) -> Dict[str, Any]:
+    """
+    Identifica límites prácticos de uso del sistema basado en umbrales configurables.
+    
+    Args:
+        max_time_ga: Tiempo máximo aceptable para GA solo (segundos)
+        max_time_hybrid: Tiempo máximo aceptable para modelo híbrido (segundos)
+        min_success_ga: Tasa mínima de éxito del GA solo
+        min_success_hybrid: Tasa mínima de éxito del modelo híbrido
+    
+    Returns:
+        Diccionario con análisis de límites prácticos
+    """
+    print("\n" + "="*80)
+    print("🎯 IDENTIFICACIÓN DE LÍMITES PRÁCTICOS DE USO")
+    print("="*80)
+    print(f"Criterios:")
+    print(f"  • Tiempo máx GA: {max_time_ga}s")
+    print(f"  • Tiempo máx Híbrido: {max_time_hybrid}s")
+    print(f"  • Éxito mín GA: {min_success_ga*100}%")
+    print(f"  • Éxito mín Híbrido: {min_success_hybrid*100}%")
+    print("="*80)
+    
+    results = {
+        'max_size_ga_only': None,
+        'max_size_hybrid': None,
+        'ga_viable_sizes': [],
+        'hybrid_viable_sizes': [],
+        'recommendations': []
+    }
+    
+    for board_size, summary in sorted(summaries.items()):
+        # Evaluar viabilidad de GA solo
+        ga_viable = (summary.ga_success_rate >= min_success_ga and 
+                    summary.ga_avg_time <= max_time_ga)
+        
+        # Evaluar viabilidad del modelo híbrido
+        hybrid_viable = (summary.hybrid_success_rate >= min_success_hybrid and 
+                        summary.hybrid_avg_time <= max_time_hybrid)
+        
+        if ga_viable:
+            results['ga_viable_sizes'].append(board_size)
+            results['max_size_ga_only'] = board_size
+        
+        if hybrid_viable:
+            results['hybrid_viable_sizes'].append(board_size)
+            results['max_size_hybrid'] = board_size
+        
+        # Mostrar evaluación
+        print(f"\n📐 Tablero {board_size}x{board_size}:")
+        
+        # GA Solo
+        ga_status = "✅ VIABLE" if ga_viable else "❌ NO VIABLE"
+        ga_reasons = []
+        if summary.ga_success_rate < min_success_ga:
+            ga_reasons.append(f"Éxito bajo ({summary.ga_success_rate*100:.1f}%)")
+        if summary.ga_avg_time > max_time_ga:
+            ga_reasons.append(f"Tiempo alto ({summary.ga_avg_time:.1f}s)")
+        
+        print(f"   GA Solo: {ga_status}")
+        print(f"      • Éxito: {summary.ga_success_rate*100:.1f}% (req: {min_success_ga*100}%)")
+        print(f"      • Tiempo: {summary.ga_avg_time:.2f}s (max: {max_time_ga}s)")
+        if ga_reasons:
+            print(f"      • Razones: {', '.join(ga_reasons)}")
+        
+        # Modelo Híbrido
+        hybrid_status = "✅ VIABLE" if hybrid_viable else "❌ NO VIABLE"
+        hybrid_reasons = []
+        if summary.hybrid_success_rate < min_success_hybrid:
+            hybrid_reasons.append(f"Éxito bajo ({summary.hybrid_success_rate*100:.1f}%)")
+        if summary.hybrid_avg_time > max_time_hybrid:
+            hybrid_reasons.append(f"Tiempo alto ({summary.hybrid_avg_time:.1f}s)")
+        
+        print(f"   Modelo Híbrido: {hybrid_status}")
+        print(f"      • Éxito: {summary.hybrid_success_rate*100:.1f}% (req: {min_success_hybrid*100}%)")
+        print(f"      • Tiempo: {summary.hybrid_avg_time:.2f}s (max: {max_time_hybrid}s)")
+        print(f"      • Uso BT: {summary.bt_usage_rate*100:.1f}%")
+        if hybrid_reasons:
+            print(f"      • Razones: {', '.join(hybrid_reasons)}")
+    
+    # Generar recomendaciones
+    print(f"\n{'='*80}")
+    print("📋 RESUMEN Y RECOMENDACIONES")
+    print("="*80)
+    
+    if results['max_size_ga_only']:
+        print(f"\n✅ GA SOLO es viable hasta: {results['max_size_ga_only']}x{results['max_size_ga_only']}")
+        results['recommendations'].append(
+            f"Usar GA solo para tableros hasta {results['max_size_ga_only']}x{results['max_size_ga_only']}"
+        )
+    else:
+        print(f"\n❌ GA SOLO no cumple criterios en ningún tamaño probado")
+        results['recommendations'].append(
+            "GA solo requiere ajuste de parámetros o no es viable"
+        )
+    
+    if results['max_size_hybrid']:
+        print(f"✅ MODELO HÍBRIDO es viable hasta: {results['max_size_hybrid']}x{results['max_size_hybrid']}")
+        results['recommendations'].append(
+            f"Usar modelo híbrido GA+BT para tableros hasta {results['max_size_hybrid']}x{results['max_size_hybrid']}"
+        )
+    else:
+        print(f"❌ MODELO HÍBRIDO no cumple criterios en ningún tamaño probado")
+        results['recommendations'].append(
+            "Modelo híbrido requiere optimización o no es viable"
+        )
+    
+    # Análisis de costo-beneficio
+    if results['max_size_ga_only'] and results['max_size_hybrid']:
+        if results['max_size_hybrid'] > results['max_size_ga_only']:
+            improvement = results['max_size_hybrid'] - results['max_size_ga_only']
+            print(f"\n🎯 El modelo híbrido extiende la viabilidad en {improvement} tamaño(s) de tablero")
+            results['recommendations'].append(
+                f"El backtracking añade {improvement} tamaño(s) de capacidad al sistema"
+            )
+    
+    # Identificar tamaño óptimo (mejor balance éxito/tiempo)
+    best_balance = None
+    best_score = 0
+    for board_size, summary in summaries.items():
+        # Score: éxito / tiempo (queremos alto éxito, bajo tiempo)
+        balance_score = summary.hybrid_success_rate / (summary.hybrid_avg_time + 1)
+        if balance_score > best_score:
+            best_score = balance_score
+            best_balance = board_size
+    
+    if best_balance:
+        print(f"\n🏆 TAMAÑO ÓPTIMO: {best_balance}x{best_balance}")
+        print(f"   (Mejor balance éxito/tiempo: {best_score:.3f})")
+        results['optimal_size'] = best_balance
+        results['recommendations'].append(
+            f"Para uso en producción, recomendamos tableros {best_balance}x{best_balance}"
+        )
+    
+    print(f"\n{'='*80}")
+    
+    return results
+
+
+
 def plot_scalability_loglog(summaries: Dict[int, ScalabilitySummary],
                             save_path: str = "scalability_loglog.png"):
     """Genera gráfico log-log de escalabilidad."""
@@ -646,6 +804,15 @@ def run_complete_scalability_study(
     # Identificar umbral de ineficiencia
     inefficiency_point = identify_inefficiency_threshold(summaries)
     
+    # Identificar límites prácticos de uso
+    practical_limits = identify_practical_limits(
+        summaries,
+        max_time_ga=60.0,
+        max_time_hybrid=120.0,
+        min_success_ga=0.5,
+        min_success_hybrid=0.8
+    )
+    
     # Exportar resultados
     csv_path = os.path.join(output_dir, "scalability_results.csv")
     json_path = os.path.join(output_dir, "scalability_summary.json")
@@ -673,7 +840,13 @@ def run_complete_scalability_study(
     if inefficiency_point:
         print(f"\n⚠️  Punto crítico detectado en tableros {inefficiency_point}x{inefficiency_point}")
     
-    return results, summaries, inefficiency_point
+    # Guardar reporte de límites prácticos
+    limits_path = os.path.join(output_dir, "practical_limits.json")
+    with open(limits_path, 'w', encoding='utf-8') as f:
+        json.dump(practical_limits, f, indent=2, ensure_ascii=False)
+    print(f"\n📋 Análisis de límites prácticos guardado en: {limits_path}")
+    
+    return results, summaries, inefficiency_point, practical_limits
 
 
 if __name__ == "__main__":

@@ -15,11 +15,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 try:
-    from .genetic_algorithm import ga_solve_flow
+    from .backtracking_solver import solve_flow_bt
+    from .genetic_algorithm import ga_solve_flow, is_perfect
     from .metrics import GAMetrics
     from .puzzle_generator import generate_random_puzzle
 except ImportError:
-    from genetic_algorithm import ga_solve_flow
+    from backtracking_solver import solve_flow_bt
+    from genetic_algorithm import ga_solve_flow, is_perfect
     from metrics import GAMetrics
     from puzzle_generator import generate_random_puzzle
 
@@ -54,19 +56,23 @@ class ExperimentResult:
     num_colors: int
     run_number: int
     
-    # Métricas
-    success: bool
-    time: float
+    # Métricas GA
+    ga_success: bool
+    ga_time: float
     generations_executed: int
     generations_to_solution: Optional[int]
     fitness_evals: int
     final_fitness: float
     convergence_generation: Optional[int]
     diversity_loss: float
-    
-    # Métricas agregadas
     avg_fitness: float
     fitness_improvement: float
+    
+    # Métricas híbridas (GA + BT)
+    bt_used: bool = False
+    bt_time: float = 0.0
+    hybrid_success: bool = False
+    hybrid_time: float = 0.0
 
 
 @dataclass
@@ -124,14 +130,25 @@ def run_experiment_with_config(config: ParameterConfig,
                                board_size: int,
                                num_colors: int,
                                run_number: int = 1,
+                               use_hybrid: bool = True,
                                verbose: bool = False) -> ExperimentResult:
-    """Ejecuta un experimento con una configuración específica."""
+    """
+    Ejecuta un experimento con una configuración específica.
+    
+    Args:
+        config: Configuración de parámetros del GA
+        board_size: Tamaño del tablero
+        num_colors: Número de colores
+        run_number: Número de corrida
+        use_hybrid: Si True, usa backtracking cuando GA falla
+        verbose: Mostrar progreso detallado
+    """
     
     # Generar puzzle
     terminals = generate_random_puzzle(board_size, num_colors)
     
     # Ejecutar GA
-    start_time = time.time()
+    ga_start_time = time.time()
     solution, metrics = ga_solve_flow(
         board_size, terminals,
         pop_size=config.pop_size,
@@ -142,21 +159,41 @@ def run_experiment_with_config(config: ParameterConfig,
         verbose=verbose,
         collect_metrics=True
     )
-    elapsed_time = time.time() - start_time
+    ga_elapsed_time = time.time() - ga_start_time
     
-    # Extraer métricas
+    # Extraer métricas GA
     summary = metrics.get_summary()
     perf = summary['rendimiento']
     fitness = summary['fitness']
     div = summary['diversidad']
+    
+    ga_success = perf['exito']
+    
+    # Inicializar métricas híbridas
+    bt_used = False
+    bt_time = 0.0
+    hybrid_success = ga_success
+    
+    # Si GA falló y se permite híbrido, intentar con Backtracking
+    if not ga_success and use_hybrid:
+        bt_start = time.time()
+        solution_bt = solve_flow_bt(board_size, terminals, start_grid=solution)
+        bt_time = time.time() - bt_start
+        
+        if solution_bt and is_perfect(solution_bt, terminals):
+            bt_used = True
+            hybrid_success = True
+            solution = solution_bt  # Actualizar solución
+    
+    hybrid_time = ga_elapsed_time + bt_time
     
     return ExperimentResult(
         config=config,
         board_size=board_size,
         num_colors=num_colors,
         run_number=run_number,
-        success=perf['exito'],
-        time=elapsed_time,
+        ga_success=ga_success,
+        ga_time=ga_elapsed_time,
         generations_executed=perf['generaciones_ejecutadas'],
         generations_to_solution=perf['generaciones_hasta_solucion'],
         fitness_evals=perf['evaluaciones_fitness'],
@@ -164,7 +201,11 @@ def run_experiment_with_config(config: ParameterConfig,
         convergence_generation=perf['generacion_convergencia'],
         diversity_loss=div['perdida_diversidad'],
         avg_fitness=fitness['fitness_promedio'],
-        fitness_improvement=fitness['mejora_total']
+        fitness_improvement=fitness['mejora_total'],
+        bt_used=bt_used,
+        bt_time=bt_time,
+        hybrid_success=hybrid_success,
+        hybrid_time=hybrid_time
     )
 
 
@@ -218,12 +259,30 @@ def grid_search(param_space: Dict[str, List[Any]],
         param_dict = dict(zip(keys, combo))
         config = ParameterConfig(**param_dict)
         
-        print(f"\n[{combo_idx}/{len(combinations)}] Configuración: {config}")
-        print("-" * 60)
+        # Calcular progreso global
+        global_progress = ((combo_idx - 1) / len(combinations)) * 100
+        bar_length = 50
+        filled = int(bar_length * (combo_idx - 1) / len(combinations))
+        global_bar = '█' * filled + '░' * (bar_length - filled)
+        
+        print(f"\n{'='*80}")
+        print(f"[{global_bar}] {global_progress:5.1f}%")
+        print(f"CONFIGURACIÓN [{combo_idx}/{len(combinations)}]")
+        print(f"{'='*80}")
+        print(f"Pop: {config.pop_size} | Gen: {config.generations} | Mut: {config.mut_rate} | "
+              f"Elite: {config.elite} | Tour: {config.tour_k}")
+        print(f"{'='*80}")
         
         for run in range(1, runs_per_config + 1):
             experiment_count += 1
-            print(f"  Corrida {run}/{runs_per_config}...", end=" ", flush=True)
+            
+            # Progreso dentro de la configuración
+            run_progress = (run / runs_per_config) * 100
+            run_bar_length = 20
+            run_filled = int(run_bar_length * run / runs_per_config)
+            run_bar = '█' * run_filled + '░' * (run_bar_length - run_filled)
+            
+            print(f"  [{run_bar}] Run {run}/{runs_per_config} ({run_progress:4.0f}%)...", end=" ", flush=True)
             
             try:
                 result = run_experiment_with_config(
@@ -232,8 +291,8 @@ def grid_search(param_space: Dict[str, List[Any]],
                 results.append(result)
                 
                 # Mostrar resultado breve
-                status = "✅" if result.success else "❌"
-                print(f"{status} | {result.time:.2f}s | {result.generations_executed} gen | "
+                status = "✅" if result.ga_success else "❌"
+                print(f"{status} | {result.ga_time:.2f}s | {result.generations_executed} gen | "
                       f"fitness: {result.final_fitness:.1f}")
                 
             except Exception as e:
@@ -243,9 +302,31 @@ def grid_search(param_space: Dict[str, List[Any]],
         # Resumen parcial de esta configuración
         config_results = [r for r in results if r.config == config]
         if config_results:
-            success_rate = sum(1 for r in config_results if r.success) / len(config_results)
-            avg_time = statistics.mean(r.time for r in config_results)
-            print(f"  → Éxito: {success_rate*100:.1f}% | Tiempo promedio: {avg_time:.3f}s")
+            success_rate = sum(1 for r in config_results if r.ga_success) / len(config_results)
+            avg_time = statistics.mean(r.ga_time for r in config_results)
+            avg_gens = statistics.mean(r.generations_executed for r in config_results)
+            
+            # Determinar estado visual
+            if success_rate >= 0.8:
+                status_icon = "✅ EXCELENTE"
+                status_color = ""
+            elif success_rate >= 0.5:
+                status_icon = "✔️  BUENO"
+                status_color = ""
+            elif success_rate >= 0.3:
+                status_icon = "⚠️  REGULAR"
+                status_color = ""
+            else:
+                status_icon = "❌ POBRE"
+                status_color = ""
+            
+            print(f"\n  {'─'*76}")
+            print(f"  📊 RESUMEN CONFIGURACIÓN: {status_icon}")
+            print(f"  {'─'*76}")
+            print(f"  • Tasa de éxito: {success_rate*100:5.1f}%")
+            print(f"  • Tiempo promedio: {avg_time:6.3f}s")
+            print(f"  • Generaciones promedio: {avg_gens:6.1f}")
+            print(f"  {'─'*76}")
     
     return results
 
@@ -271,10 +352,10 @@ def summarize_results(results: List[ExperimentResult]) -> Dict[str, Configuratio
         num_runs = len(config_results)
         
         # Métricas de éxito
-        successes = [r for r in config_results if r.success]
+        successes = [r for r in config_results if r.ga_success]
         success_rate = len(successes) / num_runs
         
-        times = [r.time for r in config_results]
+        times = [r.ga_time for r in config_results]
         avg_time = statistics.mean(times)
         std_time = statistics.stdev(times) if num_runs > 1 else 0.0
         
@@ -319,38 +400,83 @@ def print_ranking_table(summaries: Dict[str, ConfigurationSummary], top_n: int =
     # Ordenar por score
     ranked = sorted(summaries.values(), key=lambda s: s.score, reverse=True)
     
-    print("\n" + "="*140)
-    print(f"🏆 RANKING DE CONFIGURACIONES (Top {min(top_n, len(ranked))})")
-    print("="*140)
+    print("\n" + "="*150)
+    print(f"{'🏆 RANKING DE CONFIGURACIONES':^150}")
+    print(f"{'Top ' + str(min(top_n, len(ranked))) + ' mejores configuraciones':^150}")
+    print("="*150)
     
-    # Encabezados
-    print(f"{'Rank':5} {'Pop':6} {'Gen':6} {'MutRate':9} {'Elite':7} {'TourK':7} "
-          f"{'Éxito%':8} {'Tiempo':9} {'FitEvals':10} {'Score':8}")
-    print("-" * 140)
+    # Encabezados más claros con emojis
+    print(f"{'':^5} {'👥':^6} {'🔄':^7} {'🎲':^10} {'⭐':^7} {'🎯':^7} "
+          f"{'✅ Éxito':^12} {'⏱️ Tiempo':^12} {'📊 Evals':^12} {'🏅 Score':^10}")
+    print(f"{'Rank':^5} {'Pop':^6} {'Gen':^7} {'MutRate':^10} {'Elite':^7} {'TourK':^7} "
+          f"{'(%)':^12} {'(seg)':^12} {'(miles)':^12} {'(0-1)':^10}")
+    print("-" * 150)
     
     for rank, summary in enumerate(ranked[:top_n], 1):
         config = summary.config
-        medal = "🥇" if rank == 1 else ("🥈" if rank == 2 else ("🥉" if rank == 3 else "  "))
         
-        print(f"{medal}{rank:3} {config.pop_size:6} {config.generations:6} "
-              f"{config.mut_rate:9.3f} {config.elite:7} {config.tour_k:7} "
-              f"{summary.success_rate*100:7.1f}% {summary.avg_time:8.2f}s "
-              f"{summary.avg_fitness_evals:9.0f} {summary.score:8.3f}")
+        # Determinar medalla/emoji según ranking
+        if rank == 1:
+            medal = "🥇"
+        elif rank == 2:
+            medal = "🥈"
+        elif rank == 3:
+            medal = "🥉"
+        elif rank <= 5:
+            medal = "⭐"
+        else:
+            medal = "  "
+        
+        # Color de fondo según tasa de éxito
+        if summary.success_rate >= 0.95:
+            status = "✅"
+        elif summary.success_rate >= 0.80:
+            status = "✔️ "
+        elif summary.success_rate >= 0.50:
+            status = "⚠️ "
+        else:
+            status = "❌"
+        
+        # Formatear evaluaciones en miles
+        evals_k = summary.avg_fitness_evals / 1000
+        
+        print(f"{medal}{rank:3} {config.pop_size:6} {config.generations:7} "
+              f"{config.mut_rate:10.4f} {config.elite:7} {config.tour_k:7} "
+              f"{status} {summary.success_rate*100:7.1f}% {summary.avg_time:9.3f}s "
+              f"{evals_k:10.1f}k {summary.score:10.4f}")
     
-    print("="*140)
+    print("="*150)
     
-    # Mostrar mejor configuración
+    # Mostrar mejor configuración con más detalles
     if ranked:
         best = ranked[0]
-        print(f"\n🎯 MEJOR CONFIGURACIÓN:")
-        print(f"   • Población: {best.config.pop_size}")
-        print(f"   • Generaciones: {best.config.generations}")
-        print(f"   • Tasa de mutación: {best.config.mut_rate}")
-        print(f"   • Elite: {best.config.elite}")
-        print(f"   • Torneo K: {best.config.tour_k}")
-        print(f"   • Tasa de éxito: {best.success_rate*100:.1f}%")
-        print(f"   • Tiempo promedio: {best.avg_time:.3f}s")
-        print(f"   • Score: {best.score:.3f}")
+        print(f"\n{'🎯 MEJOR CONFIGURACIÓN ENCONTRADA':^150}")
+        print("="*150)
+        print(f"  {'Parámetros':30} {'Valor':20} {'Métrica Adicional':30} {'Valor':20}")
+        print("-"*150)
+        print(f"  {'👥 Tamaño de Población':30} {best.config.pop_size:20} {'📈 Fitness Final':30} {best.avg_final_fitness:20.2f}")
+        print(f"  {'🔄 Generaciones':30} {best.config.generations:20} {'📊 Mejora Fitness':30} {best.avg_fitness_improvement:20.2f}")
+        print(f"  {'🎲 Tasa de Mutación':30} {best.config.mut_rate:20.4f} {'🔀 Pérdida Diversidad':30} {best.avg_diversity_loss:20.4f}")
+        print(f"  {'⭐ Elitismo':30} {best.config.elite:20} {'🎯 Generaciones usadas':30} {best.avg_generations:20.1f}")
+        print(f"  {'🎯 Tamaño Torneo':30} {best.config.tour_k:20} {'⚡ Evaluaciones Totales':30} {int(best.avg_fitness_evals):20,}")
+        print("-"*150)
+        print(f"  {'✅ Tasa de Éxito':30} {best.success_rate*100:19.1f}% {'⏱️  Tiempo Promedio':30} {best.avg_time:19.3f}s")
+        print(f"  {'🏅 Score Global':30} {best.score:20.4f} {'📊 Desviación Tiempo':30} {best.std_time:19.3f}s")
+        print("="*150)
+        
+        # Recomendaciones basadas en los resultados
+        print(f"\n💡 RECOMENDACIONES:")
+        if best.success_rate < 0.9:
+            print(f"  • ⚠️  Tasa de éxito baja ({best.success_rate*100:.1f}%). Considera aumentar población o generaciones")
+        if best.avg_time > 1.0:
+            print(f"  • ⏱️  Tiempo alto ({best.avg_time:.2f}s). Considera reducir evaluaciones o población")
+        if best.avg_diversity_loss > 0.8:
+            print(f"  • 🔀 Alta pérdida de diversidad ({best.avg_diversity_loss:.2f}). Aumenta mutación o reduce elite")
+        if best.config.elite == 0:
+            print(f"  • ⭐ Sin elitismo. Considera usar elite=1 o 2 para preservar mejores soluciones")
+        if best.success_rate >= 0.95 and best.avg_time < 0.5:
+            print(f"  • 🎉 ¡Excelente configuración! Balance óptimo entre éxito y velocidad")
+        print()
 
 
 def save_ranking_table_as_image(summaries: Dict[str, ConfigurationSummary], 
@@ -484,8 +610,8 @@ def export_tuning_results(results: List[ExperimentResult],
                 result.board_size,
                 result.num_colors,
                 result.run_number,
-                result.success,
-                f"{result.time:.4f}",
+                result.ga_success,
+                f"{result.ga_time:.4f}",
                 result.generations_executed,
                 result.generations_to_solution or '',
                 result.fitness_evals,
@@ -719,14 +845,62 @@ def quick_tuning_study(board_size: int = 5,
     
     print(f"\n📁 Resultados se guardarán en: {output_dir}/")
     
-    # Espacio de parámetros equilibrado
+    # 🎯 Espacio de parámetros AMPLIADO para exploración profunda
+    # Puedes comentar/descomentar líneas para diferentes estudios
+    
+    # OPCIÓN 1: Grid RÁPIDO (actual) - 4×2×4×3×4 = 384 configs
     param_space = {
-        'pop_size': [100, 200, 300, 500],
-        'generations': [500, 1000],
-        'mut_rate': [0.01, 0.03, 0.05, 0.1, 0.10],
-        'elite': [0, 2, 5],
-        'tour_k': [1, 2, 3, 5]
+        'pop_size': [150, 175, 200, 225, 250],
+        'generations': [800, 1000, 1200],
+        'mut_rate': [0.02, 0.025, 0.03, 0.035, 0.04],
+        'elite': [1, 2, 3],
+        'tour_k': [2, 3, 4]
     }
+    
+    # OPCIÓN 2: Exploración de MUTACIÓN (descomenta para usar)
+    # param_space = {
+    #     'pop_size': [200],
+    #     'generations': [1000],
+    #     'mut_rate': [0.005, 0.01, 0.02, 0.03, 0.05, 0.08, 0.1, 0.15],  # Más valores
+    #     'elite': [2],
+    #     'tour_k': [3]
+    # }
+    
+    # OPCIÓN 3: Exploración de POBLACIÓN (descomenta para usar)
+    # param_space = {
+    #     'pop_size': [50, 100, 150, 200, 250, 300, 400, 500],  # Más valores
+    #     'generations': [1000],
+    #     'mut_rate': [0.03],
+    #     'elite': [2],
+    #     'tour_k': [3]
+    # }
+    
+    # OPCIÓN 4: Exploración de SELECCIÓN (descomenta para usar)
+    # param_space = {
+    #     'pop_size': [200],
+    #     'generations': [1000],
+    #     'mut_rate': [0.03],
+    #     'elite': [2],
+    #     'tour_k': [1, 2, 3, 4, 5, 7, 10, 15]  # Presión de selección
+    # }
+    
+    # OPCIÓN 5: Exploración de ELITISMO (descomenta para usar)
+    # param_space = {
+    #     'pop_size': [200],
+    #     'generations': [1000],
+    #     'mut_rate': [0.03],
+    #     'elite': [0, 1, 2, 3, 5, 8, 10, 15, 20],  # Diferentes niveles
+    #     'tour_k': [3]
+    # }
+    
+    # OPCIÓN 6: Grid FINO para optimización (descomenta para usar)
+    # param_space = {
+    #     'pop_size': [150, 175, 200, 225, 250],
+    #     'generations': [800, 1000, 1200],
+    #     'mut_rate': [0.02, 0.025, 0.03, 0.035, 0.04],
+    #     'elite': [1, 2, 3],
+    #     'tour_k': [2, 3, 4]
+    # }
     
     # Ejecutar grid search
     results = grid_search(
@@ -772,13 +946,29 @@ def quick_tuning_study(board_size: int = 5,
 
 
 if __name__ == "__main__":
-    # Ejemplo: estudio rápido
+    import argparse
+    
+    parser = argparse.ArgumentParser(
+        description="🎛️  Sistema de Tuning Automático de Parámetros para Flow GA"
+    )
+    
+    parser.add_argument('--board-size', type=int, default=4,
+                       help='Tamaño del tablero (default: 4)')
+    parser.add_argument('--num-colors', type=int, default=3,
+                       help='Número de colores (default: 3)')
+    parser.add_argument('--runs', type=int, default=3,
+                       help='Corridas por configuración (default: 3)')
+    parser.add_argument('--output', type=str, default=None,
+                       help='Directorio de salida (default: tuning_NxN)')
+    
+    args = parser.parse_args()
+    
     print("🎛️  SISTEMA DE TUNING AUTOMÁTICO DE PARÁMETROS")
     print("="*80)
     
     quick_tuning_study(
-        board_size=5,
-        num_colors=4,
-        runs_per_config=3,  # Pocas corridas para test rápido
-        output_dir="test_tuning"
+        board_size=args.board_size,
+        num_colors=args.num_colors,
+        runs_per_config=args.runs,
+        output_dir=args.output
     )

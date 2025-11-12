@@ -245,6 +245,15 @@ def ga_solve_flow(N: int,
     generations_without_improvement = 0
     last_improvement_fitness = -1e18
     
+    # 🔥 BARRA DE PROGRESO VISUAL
+    if verbose:
+        print(f"\n{'='*80}")
+        print(f"🧬 INICIANDO EVOLUCIÓN GENÉTICA")
+        print(f"{'='*80}")
+        print(f"Población: {pop_size} | Generaciones máx: {generations}")
+        print(f"Mutación: {mut_rate} | Elite: {elite} | Torneo: {tour_k}")
+        print(f"{'='*80}\n")
+    
     for gen in range(1, generations+1):
         fits = [fitness(ind, terminals) for ind in pop]
         
@@ -272,8 +281,13 @@ def ga_solve_flow(N: int,
         # 🔥 DETECCIÓN TEMPRANA: Si estancado por mucho tiempo, detener
         if generations_without_improvement >= stagnation_limit:
             if verbose:
-                print(f"[GA] ⚠️  Estancamiento detectado en gen {gen} ({generations_without_improvement} gens sin mejora)")
-                print(f"[GA] 🛑 Problema probablemente irresoluble para este GA (fitness={best_fit:.2f})")
+                print(f"\n{'='*80}")
+                print(f"⚠️  ESTANCAMIENTO DETECTADO")
+                print(f"{'='*80}")
+                print(f"Generación: {gen}/{generations}")
+                print(f"Generaciones sin mejora: {generations_without_improvement}/{stagnation_limit}")
+                print(f"Fitness final: {best_fit:.2f}")
+                print(f"{'='*80}")
             break
         
         # Calcular métricas de esta generación
@@ -294,18 +308,36 @@ def ga_solve_flow(N: int,
             )
             metrics.add_generation_metric(gen_metric)
         
+        # 🔥 REPORTE DE PROGRESO MEJORADO
         if verbose and gen % 50 == 0:
+            progress_pct = (gen / generations) * 100
+            bar_length = 40
+            filled_length = int(bar_length * gen / generations)
+            bar = '█' * filled_length + '░' * (bar_length - filled_length)
+            
+            print(f"\r[{bar}] {progress_pct:5.1f}% | Gen {gen:4d}/{generations} | "
+                  f"Fitness: {best_fit:8.2f} | ", end='')
+            
             if collect_metrics and metrics:
                 last_metric = metrics.generation_metrics[-1]
-                print(f"[GA] Gen {gen:4d} | fitness: {best_fit:.2f} | "
-                      f"diversidad: {last_metric.diversity_score:.3f} | "
-                      f"perfectas: {last_metric.perfect_solutions}")
+                print(f"Div: {last_metric.diversity_score:.3f} | "
+                      f"Perfect: {last_metric.perfect_solutions:2d} | "
+                      f"Sin mejora: {generations_without_improvement:3d}", end='')
             else:
-                print(f"[GA] Gen {gen:4d} | best fitness = {best_fit:.2f}")
+                print(f"Sin mejora: {generations_without_improvement:3d}", end='')
+            
+            # Añadir salto de línea cada 10 reportes para no saturar
+            if gen % 500 == 0:
+                print()  # Nueva línea
         
         if is_perfect(best, terminals):
             if verbose:
-                print(f"[GA] Solución perfecta en gen {gen}.")
+                print(f"\n\n{'='*80}")
+                print(f"✅ ¡SOLUCIÓN PERFECTA ENCONTRADA!")
+                print(f"{'='*80}")
+                print(f"Generación: {gen}/{generations}")
+                print(f"Fitness final: {best_fit:.2f}")
+                print(f"{'='*80}\n")
             if collect_metrics and metrics:
                 metrics.generations_to_solution = gen
             break
