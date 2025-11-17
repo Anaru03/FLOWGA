@@ -1,0 +1,26 @@
+{
+  "max_size_ga_only": 15,
+  "max_size_hybrid": 15,
+  "ga_viable_sizes": [
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+  ],
+  "hybrid_viable_sizes": [
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+  ],
+  "recommendations": [
+    "Usar GA solo para tableros hasta 15x15",
+    "Usar modelo híbrido GA+BT para tableros hasta 15x15",
+    "Para uso en producción, recomendamos tableros 12x12"
+  ],
+  "optimal_size": 12
+}

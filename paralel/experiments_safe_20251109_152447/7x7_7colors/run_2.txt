@@ -1,0 +1,63 @@
+=================================================================
+  FLOW GENETIC ALGORITHM - IMPROVED VERSION
+  Features: A* Init, Path-aware Mutation, Local Repair
+=================================================================
+Configuration:
+  Board size:      7x7 (49 cells)
+  Colors:          7
+  Population:      500
+  Generations:     4500
+  Mutation rate:   0.050
+  Elite size:      3
+  Tournament K:    4
+  Threads:         16
+  Random seed:     25651
+=================================================================
+
+Generated puzzle with 7 colors
+Terminals:
+  A: (0,6) -> (4,2)
+  B: (0,0) -> (6,1)
+  C: (1,5) -> (5,5)
+  D: (6,0) -> (4,0)
+  E: (1,4) -> (6,4)
+  F: (3,1) -> (6,2)
+  G: (4,3) -> (0,1)
+
+Initializing population with A* pathfinding...
+Population initialized. Starting evolution...
+
+
+=================================================================
+  RESULTS
+=================================================================
+Generations executed: 1513
+Best fitness:         19998.00
+Average fitness:      19186.95
+Perfect solution:     NO ✗
+Elapsed time:         1.920 seconds
+
+⚠️  No perfect solution found. Try increasing --pop or --gen
+=================================================================
+
+Best solution found:
+┌──────────────┐
+│B G G G A A A │
+│A A A G E C A │
+│A A A G E C A │
+│D F A G E C A │
+│D F A G E C C │
+│D F F G E C C │
+│D B F E E C C │
+└──────────────┘
+
+Detailed analysis:
+  Color A: NOT connected | Size: 6 | Components: 2
+  Color B: NOT connected | Size: 1 | Components: 2
+  Color C: Connected | Size: 9 | Components: 1
+  Color D: Connected | Size: 4 | Components: 1
+  Color E: Connected | Size: 7 | Components: 1
+  Color F: Connected | Size: 5 | Components: 1
+  Color G: Connected | Size: 8 | Components: 1
+
+Connected colors: 5/7
