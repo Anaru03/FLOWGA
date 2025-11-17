@@ -57,8 +57,8 @@ def generate_random_puzzle(N: int = 5, n_colors: int = 4,
             # Fallback: paleta básica de 6 colores garantizados
             palette = ["B", "R", "Y", "G", "M", "C"]
         
-        # 💡 Limitar a máximo 15 colores (por si acaso)
-        palette = palette[:15]
+        # ✅ Sin límite - usar todos los colores disponibles en config.py
+        # La paleta ahora soporta 30+ colores ANSI
     
     # 🔍 VALIDACIÓN: Verificar que tenemos suficientes colores ÚNICOS
     if len(palette) < n_colors:

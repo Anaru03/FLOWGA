@@ -1,0 +1,170 @@
+{
+  "10x10": {
+    "configuracion": {
+      "tablero": "10x10",
+      "celdas": 100,
+      "colores": 10,
+      "corridas": 10
+    },
+    "ga_metricas": {
+      "tasa_exito": "70.0%",
+      "tiempo_promedio": "6.160s",
+      "tiempo_std": "9.163s",
+      "generaciones_promedio": "87.1",
+      "evaluaciones_promedio": "17460",
+      "generaciones_hasta_solucion": "9.0",
+      "generacion_convergencia": "12.0",
+      "perdida_diversidad": "-0.041"
+    },
+    "hibrido_metricas": {
+      "uso_backtracking": "30.0%",
+      "tiempo_bt_promedio": "0.000s",
+      "tiempo_total_promedio": "6.160s",
+      "tasa_exito_total": "100.0%"
+    },
+    "eficiencia": {
+      "score": "0.433",
+      "tasa_optimos_locales": "30.0%"
+    }
+  },
+  "11x11": {
+    "configuracion": {
+      "tablero": "11x11",
+      "celdas": 121,
+      "colores": 11,
+      "corridas": 10
+    },
+    "ga_metricas": {
+      "tasa_exito": "80.0%",
+      "tiempo_promedio": "7.089s",
+      "tiempo_std": "10.361s",
+      "generaciones_promedio": "83.6",
+      "evaluaciones_promedio": "16740",
+      "generaciones_hasta_solucion": "29.6",
+      "generacion_convergencia": "11.1",
+      "perdida_diversidad": "-0.058"
+    },
+    "hibrido_metricas": {
+      "uso_backtracking": "20.0%",
+      "tiempo_bt_promedio": "0.000s",
+      "tiempo_total_promedio": "7.089s",
+      "tasa_exito_total": "100.0%"
+    },
+    "eficiencia": {
+      "score": "0.468",
+      "tasa_optimos_locales": "20.0%"
+    }
+  },
+  "12x12": {
+    "configuracion": {
+      "tablero": "12x12",
+      "celdas": 144,
+      "colores": 12,
+      "corridas": 10
+    },
+    "ga_metricas": {
+      "tasa_exito": "100.0%",
+      "tiempo_promedio": "5.019s",
+      "tiempo_std": "4.912s",
+      "generaciones_promedio": "50.4",
+      "evaluaciones_promedio": "10080",
+      "generaciones_hasta_solucion": "50.4",
+      "generacion_convergencia": "12.0",
+      "perdida_diversidad": "-0.073"
+    },
+    "hibrido_metricas": {
+      "uso_backtracking": "0.0%",
+      "tiempo_bt_promedio": "0.000s",
+      "tiempo_total_promedio": "5.019s",
+      "tasa_exito_total": "100.0%"
+    },
+    "eficiencia": {
+      "score": "0.666",
+      "tasa_optimos_locales": "0.0%"
+    }
+  },
+  "13x13": {
+    "configuracion": {
+      "tablero": "13x13",
+      "celdas": 169,
+      "colores": 13,
+      "corridas": 10
+    },
+    "ga_metricas": {
+      "tasa_exito": "70.0%",
+      "tiempo_promedio": "14.650s",
+      "tiempo_std": "16.593s",
+      "generaciones_promedio": "122.8",
+      "evaluaciones_promedio": "24560",
+      "generaciones_hasta_solucion": "46.9",
+      "generacion_convergencia": "11.6",
+      "perdida_diversidad": "-0.052"
+    },
+    "hibrido_metricas": {
+      "uso_backtracking": "30.0%",
+      "tiempo_bt_promedio": "0.000s",
+      "tiempo_total_promedio": "14.650s",
+      "tasa_exito_total": "100.0%"
+    },
+    "eficiencia": {
+      "score": "0.284",
+      "tasa_optimos_locales": "30.0%"
+    }
+  },
+  "14x14": {
+    "configuracion": {
+      "tablero": "14x14",
+      "celdas": 196,
+      "colores": 14,
+      "corridas": 10
+    },
+    "ga_metricas": {
+      "tasa_exito": "90.0%",
+      "tiempo_promedio": "11.268s",
+      "tiempo_std": "12.069s",
+      "generaciones_promedio": "83.3",
+      "evaluaciones_promedio": "16660",
+      "generaciones_hasta_solucion": "59.2",
+      "generacion_convergencia": "12.3",
+      "perdida_diversidad": "-0.084"
+    },
+    "hibrido_metricas": {
+      "uso_backtracking": "10.0%",
+      "tiempo_bt_promedio": "0.000s",
+      "tiempo_total_promedio": "11.268s",
+      "tasa_exito_total": "100.0%"
+    },
+    "eficiencia": {
+      "score": "0.423",
+      "tasa_optimos_locales": "10.0%"
+    }
+  },
+  "15x15": {
+    "configuracion": {
+      "tablero": "15x15",
+      "celdas": 225,
+      "colores": 15,
+      "corridas": 10
+    },
+    "ga_metricas": {
+      "tasa_exito": "50.0%",
+      "tiempo_promedio": "32.314s",
+      "tiempo_std": "18.616s",
+      "generaciones_promedio": "212.0",
+      "evaluaciones_promedio": "42400",
+      "generaciones_hasta_solucion": "124.0",
+      "generacion_convergencia": "11.8",
+      "perdida_diversidad": "-0.085"
+    },
+    "hibrido_metricas": {
+      "uso_backtracking": "50.0%",
+      "tiempo_bt_promedio": "89.306s",
+      "tiempo_total_promedio": "76.967s",
+      "tasa_exito_total": "100.0%"
+    },
+    "eficiencia": {
+      "score": "0.118",
+      "tasa_optimos_locales": "50.0%"
+    }
+  }
+}

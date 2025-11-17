@@ -42,11 +42,12 @@ except ImportError:
 def main():
     """Función principal del programa."""
     # ---- Parámetros del tablero ----
-    N = 10          # tamaño del tablero (p. ej., 5, 6, 7, 8, 10)
-    n_colors = 15   # número de colores (MÁXIMO disponible en la paleta)
+    N = 15        # tamaño del tablero (p. ej., 5, 6, 7, 8, 10)
+    n_colors = 8   # número de colores (MÁXIMO: 30+ con paleta extendida ANSI)
     # 💡 REGLA DE ORO PARA TABLEROS GRANDES:
-    #    • 10×10: usar 15 colores (deja 70 celdas libres) - límite de paleta actual
-    #    • Para más colores, ampliar paleta en config.py
+    #    • 10×10: usar 15+ colores (deja ~70 celdas libres)
+    #    • Paleta disponible: 30+ colores (15 colorama + 15 ANSI 256)
+    #    • Para MÁS colores: añadir más letras en config.py (A,D,E,F,H,I,J,Q,S,U,Z...)
     #    • 8×8:  usar 10-13 colores
     #    • 7×7:  usar 7-10 colores
     #    • Más colores = problema más fácil para el GA
@@ -75,16 +76,16 @@ def main():
         
         # Advertencias según el número de colores
         if n_colors < 15:
-            print(f"\n{Fore.RED} ADVERTENCIA: Pocos colores para este tamaño{Style.RESET_ALL}")
+            print(f"\n{Fore.RED}⚠️  ADVERTENCIA: Pocos colores para este tamaño{Style.RESET_ALL}")
             print(f"   • Colores actuales: {n_colors}")
-            print(f"   • Colores disponibles en paleta: 15")
+            print(f"   • Colores disponibles en paleta: 30+")
             print(f"   • Colores óptimos (teóricos): {optimal_colors}")
             print(f"   • Problema: {free_cells} celdas libres es DIFÍCIL para el GA")
-            print(f"\n{Fore.YELLOW}💡 Sugerencia: Usar 15 colores (máximo disponible){Style.RESET_ALL}")
+            print(f"\n{Fore.YELLOW}💡 Sugerencia: Usar 15-30 colores (más disponibles){Style.RESET_ALL}")
         else:
-            print(f"\n{Fore.GREEN}✅ Usando máximo de colores disponibles{Style.RESET_ALL}")
-            print(f"   • Colores: {n_colors} (máximo en paleta actual)")
-            print(f"   • Para más colores, ampliar paleta en config.py")
+            print(f"\n{Fore.GREEN}✅ Buena configuración de colores{Style.RESET_ALL}")
+            print(f"   • Colores: {n_colors}")
+            print(f"   • Paleta extendida disponible hasta 30+ colores")
         
         print(f"\n{Fore.YELLOW}  Tiempo estimado de ejecución:{Style.RESET_ALL}")
         if n_colors >= 12:

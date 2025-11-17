@@ -212,48 +212,61 @@ def run_scalability_experiments(
     
     total_configs = len(board_sizes)
     
-    for config_idx, board_size in enumerate(board_sizes, 1):
-        num_colors = colors_config.get(board_size, board_size // 2)
-        results[board_size] = []
-        
-        print(f"\n{'='*80}")
-        print(f"📐 CONFIGURACIÓN [{config_idx}/{total_configs}]: TABLERO {board_size}x{board_size}")
-        print(f"{'='*80}")
-        print(f"Celdas: {board_size*board_size} | Colores: {num_colors} | Corridas: {runs_per_size}")
-        print(f"{'='*80}")
-        
-        for run in range(1, runs_per_size + 1):
-            # Barra de progreso de corridas
-            run_progress = (run / runs_per_size) * 100
-            bar_length = 30
-            filled = int(bar_length * run / runs_per_size)
-            bar = '█' * filled + '░' * (bar_length - filled)
+    try:
+        for config_idx, board_size in enumerate(board_sizes, 1):
+            num_colors = colors_config.get(board_size, board_size // 2)
+            results[board_size] = []
             
-            print(f"\n  [{bar}] {run_progress:5.1f}% | Corrida {run}/{runs_per_size}...", end=" ", flush=True)
+            print(f"\n{'='*80}")
+            print(f"📐 CONFIGURACIÓN [{config_idx}/{total_configs}]: TABLERO {board_size}x{board_size}")
+            print(f"{'='*80}")
+            print(f"Celdas: {board_size*board_size} | Colores: {num_colors} | Corridas: {runs_per_size}")
+            print(f"{'='*80}")
             
-            try:
-                result = run_single_experiment(
-                    board_size, num_colors,
-                    pop_size, generations,
-                    verbose=verbose
-                )
-                results[board_size].append(result)
+            for run in range(1, runs_per_size + 1):
+                # Barra de progreso de corridas
+                run_progress = (run / runs_per_size) * 100
+                bar_length = 30
+                filled = int(bar_length * run / runs_per_size)
+                bar = '█' * filled + '░' * (bar_length - filled)
                 
-                # Mostrar resultado breve
-                status = "✅ GA" if result.ga_success else ("✅ BT" if result.bt_used else "❌")
-                print(f"{status} | {result.ga_time:.2f}s | {result.ga_generations} gen | {result.ga_fitness_evals} evals")
+                print(f"\n  [{bar}] {run_progress:5.1f}% | Corrida {run}/{runs_per_size}...", end=" ", flush=True)
                 
-            except Exception as e:
-                print(f"❌ Error: {e}")
-                continue
-        
-        # Resumen parcial
-        if results[board_size]:
-            ga_success_rate = sum(1 for r in results[board_size] if r.ga_success) / len(results[board_size])
-            avg_time = statistics.mean(r.ga_time for r in results[board_size])
-            print(f"\n  📊 Resumen {board_size}x{board_size}:")
-            print(f"     • Éxito GA: {ga_success_rate*100:.1f}%")
-            print(f"     • Tiempo promedio: {avg_time:.3f}s")
+                try:
+                    result = run_single_experiment(
+                        board_size, num_colors,
+                        pop_size, generations,
+                        verbose=verbose
+                    )
+                    results[board_size].append(result)
+                    
+                    # Mostrar resultado breve
+                    status = "✅ GA" if result.ga_success else ("✅ BT" if result.bt_used else "❌")
+                    print(f"{status} | {result.ga_time:.2f}s | {result.ga_generations} gen | {result.ga_fitness_evals} evals")
+                    
+                except Exception as e:
+                    print(f"❌ Error: {e}")
+                    continue
+            
+            # Resumen parcial
+            if results[board_size]:
+                ga_success_rate = sum(1 for r in results[board_size] if r.ga_success) / len(results[board_size])
+                avg_time = statistics.mean(r.ga_time for r in results[board_size])
+                print(f"\n  📊 Resumen {board_size}x{board_size}:")
+                print(f"     • Éxito GA: {ga_success_rate*100:.1f}%")
+                print(f"     • Tiempo promedio: {avg_time:.3f}s")
+    
+    except KeyboardInterrupt:
+        print(f"\n\n{'='*80}")
+        print(f"⚠️  EXPERIMENTO INTERRUMPIDO (Ctrl+C)")
+        print(f"{'='*80}")
+        print(f"💾 Guardando resultados parciales...")
+        total_completed = sum(len(runs) for runs in results.values())
+        print(f"   • Corridas completadas: {total_completed}")
+        print(f"   • Tableros analizados: {len([bs for bs, runs in results.items() if runs])}")
+        print(f"{'='*80}\n")
+        # Filtrar tableros vacíos
+        results = {bs: runs for bs, runs in results.items() if runs}
     
     return results
 
